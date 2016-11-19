@@ -4,10 +4,6 @@ import (
 	"golang.org/x/crypto/pbkdf2"
 	"crypto/sha1"
 	"errors"
-
-
-	//TODO: More elegant style to import these types from sub modules to
-	// local namespace?
 	"github.com/FTwOoO/vpncore/enc/cipher"
 )
 
@@ -38,7 +34,7 @@ func GetKey(k string, kenLen int) []byte {
 	return pass
 }
 
-func NewStreamCipher(config *EncrytionConfig) (CommonCipher, error) {
+func NewCipher(config *EncrytionConfig) (CommonCipher, error) {
 	switch config.Cipher {
 	case SALSA20:
 		pass := GetKey(config.Password, 32)
