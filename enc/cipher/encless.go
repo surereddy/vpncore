@@ -16,13 +16,13 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
-package enc
+package cipher
 
 import (
 	"io"
 	"crypto/rand"
-	"github.com/FTwOoO/vpncore/enc/cnw"
-	"github.com/FTwOoO/vpncore/enc/aont"
+	"github.com/FTwOoO/vpncore/enc/common/cnw"
+	"github.com/FTwOoO/vpncore/enc/common/aont"
 )
 
 var (

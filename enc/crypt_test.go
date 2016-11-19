@@ -26,12 +26,13 @@ import (
 	"io"
 	"testing"
 	"fmt"
+	"github.com/FTwOoO/vpncore/enc/cipher"
 )
 
 func EnryptionOne(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
 	fmt.Printf("Test %s for EnryptionOne with key[%s] and test data length %d\n", encrytion, testKey, testDataLen)
 
-	bc, err := NewBlock(&BlockConfig{Cipher:encrytion, Password:testKey})
+	bc, err := NewStreamCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -48,8 +49,8 @@ func EnryptionOne(t *testing.T, encrytion Cipher, testKey string, testDataLen in
 
 func EnryptionStreaming(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
 
-	bc1, err := NewBlock(&BlockConfig{Cipher:encrytion, Password:testKey})
-	bc2, err := NewBlock(&BlockConfig{Cipher:encrytion, Password:testKey})
+	bc1, err := NewStreamCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
+	bc2, err := NewStreamCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
 
 	if err != nil {
 		t.Fatal(err)
@@ -68,10 +69,10 @@ func EnryptionStreaming(t *testing.T, encrytion Cipher, testKey string, testData
 	io.ReadFull(crand.Reader, data2)
 	io.ReadFull(crand.Reader, data3)
 
-	alldata := make([]byte, len1+len2+len3)
+	alldata := make([]byte, len1 + len2 + len3)
 	copy(alldata[:len1], data1)
-	copy(alldata[len1:len1+len2], data2)
-	copy(alldata[len1+len2:], data3)
+	copy(alldata[len1:len1 + len2], data2)
+	copy(alldata[len1 + len2:], data3)
 
 	dec := make([]byte, len(alldata))
 	dec2 := make([]byte, len(alldata))
@@ -79,25 +80,25 @@ func EnryptionStreaming(t *testing.T, encrytion Cipher, testKey string, testData
 	enc2 := make([]byte, len(alldata))
 
 	bc1.Encrypt(enc[:len1], data1)
-	bc1.Encrypt(enc[len1:len1+len2], data2)
-	bc1.Encrypt(enc[len1+len2:], data3)
+	bc1.Encrypt(enc[len1:len1 + len2], data2)
+	bc1.Encrypt(enc[len1 + len2:], data3)
 	bc2.Encrypt(enc2, alldata)
 
 	if !bytes.Equal(enc2, enc) {
-		t.Fatalf("Not streaming consistent encryption!")
+		t.Fatal("Not streaming consistent encryption!")
 	}
 
 	bc2.Decrypt(dec2[:len1], enc2[:len1])
-	bc2.Decrypt(dec2[len1:len1+len2], enc2[len1:len1+len2])
-	bc2.Decrypt(dec2[len1+len2:], enc2[len1+len2:])
+	bc2.Decrypt(dec2[len1:len1 + len2], enc2[len1:len1 + len2])
+	bc2.Decrypt(dec2[len1 + len2:], enc2[len1 + len2:])
 	bc1.Decrypt(dec, enc)
 
 	if !bytes.Equal(dec2, dec) {
-		t.Fatalf("Error decryption 1!")
+		t.Fatal("Error decryption 1!")
 	}
 
 	if !bytes.Equal(alldata, dec2) {
-		t.Fatalf("Error decryption 2!")
+		t.Fatal("Error decryption 2!")
 	}
 }
 
@@ -108,9 +109,9 @@ func TestAll(t *testing.T) {
 	testCiphers := []Cipher{AES128CFB, AES256CFB, SALSA20, NONE}
 
 	for _, testDatalen := range testDatalens {
-		for _, cipher := range testCiphers {
-			EnryptionOne(t, cipher, password, testDatalen)
-			EnryptionStreaming(t, cipher, password, testDatalen)
+		for _, cf := range testCiphers {
+			EnryptionOne(t, cf, password, testDatalen)
+			EnryptionStreaming(t, cf, password, testDatalen)
 
 		}
 	}
@@ -122,7 +123,7 @@ func BenchmarkSalsa20(b *testing.B) {
 
 	pass := make([]byte, 32)
 	io.ReadFull(crand.Reader, pass)
-	bc, err := NewSalsa20BlockCrypt(pass)
+	bc, err := cipher.NewSalsa20Stream(pass)
 	if err != nil {
 		b.Fatal(err)
 	}

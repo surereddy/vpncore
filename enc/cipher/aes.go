@@ -1,4 +1,4 @@
-package enc
+package cipher
 
 import (
 	"crypto/cipher"
@@ -9,15 +9,15 @@ import (
 
 
 // AESBlockCrypt implements BlockCrypt
-type AESBlockCrypt struct {
+type AESStream struct {
 	block  cipher.Block
 	cfb    cipher.Stream
 	cfbdec cipher.Stream
 }
 
 // NewAESBlockCrypt initates BlockCrypt by the given key
-func NewAESBlockCrypt(key []byte) (BlockCrypt, error) {
-	c := new(AESBlockCrypt)
+func NewAESStream(key []byte) (StreamCipher, error) {
+	c := new(AESStream)
 
 	block, err := aes.NewCipher(key)
 	if err != nil {
@@ -34,13 +34,13 @@ func NewAESBlockCrypt(key []byte) (BlockCrypt, error) {
 }
 
 // Encrypt implements Encrypt interface
-func (c *AESBlockCrypt) Encrypt(dst, src []byte) {
+func (c *AESStream) Encrypt(dst, src []byte) {
 	c.cfb.XORKeyStream(dst, src)
 
 }
 
 // Decrypt implements Decrypt interface
-func (c *AESBlockCrypt) Decrypt(dst, src []byte) {
+func (c *AESStream) Decrypt(dst, src []byte) {
 	c.cfbdec.XORKeyStream(dst, src)
 
 }
