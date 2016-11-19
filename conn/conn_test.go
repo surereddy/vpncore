@@ -37,7 +37,7 @@ func TestNewListener(t *testing.T) {
 	password := "123456"
 	port := mrand.Intn(100) + 20000
 	testDatalens := []int{0x10, 0x100, 0x1000, 0x10000, 0x10000}
-	testCiphers := []enc.Cipher{enc.AES128CFB, enc.AES256CFB, enc.SALSA20, enc.NONE}
+	testCiphers := []enc.Cipher{enc.AES128CFB, enc.AES256CFB, /*enc.SALSA20,*/ enc.NONE}
 
 	for _, testDatalen := range testDatalens {
 		for _, cipher := range testCiphers {
@@ -54,7 +54,7 @@ func testOneConnection(t *testing.T, proto conn.TransProtocol, cipher enc.Cipher
 		Protocol:proto,
 		ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
 		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
-	context2 := &crypt.CryptLayerContext{BlockConfig:&enc.BlockConfig{Cipher:cipher, Password:password}}
+	context2 := &crypt.CryptLayerContext{EncrytionConfig:&enc.EncrytionConfig{Cipher:cipher, Password:password}}
 
 	l, err := conn.NewListener([]conn.ConnLayerContext{context1, context2})
 	if err != nil {

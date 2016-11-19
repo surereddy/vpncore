@@ -24,26 +24,26 @@ import (
 )
 
 type CryptLayerContext struct {
-	*enc.BlockConfig
+	*enc.EncrytionConfig
 }
 
 func (this *CryptLayerContext) Dial(c net.Conn) (net.Conn, error) {
 
-	block, err := enc.NewBlock(this.BlockConfig)
+	cipher, err := enc.NewCipher(this.EncrytionConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewCryptConn(c, block)
+	return NewCryptConn(c, cipher)
 }
 
 func (this *CryptLayerContext) NewListener(l net.Listener) (net.Listener, error) {
-	block, err := enc.NewBlock(this.BlockConfig)
+	cipher, err := enc.NewCipher(this.EncrytionConfig)
 	if err != nil {
 		return nil, err
 	}
 
-	return &cryptListener{Listener:l, block:block}, nil
+	return &cryptListener{Listener:l, cipher:cipher}, nil
 }
 
 

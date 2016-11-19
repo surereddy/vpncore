@@ -24,7 +24,7 @@ import (
 
 type cryptListener struct {
 	net.Listener
-	block enc.BlockCrypt
+	cipher enc.StreamCipher
 }
 
 func (l *cryptListener) Accept() (net.Conn, error) {
@@ -32,7 +32,7 @@ func (l *cryptListener) Accept() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		return NewCryptConn(conn, l.block)
+		return NewCryptConn(conn, l.cipher)
 	}
 }
 

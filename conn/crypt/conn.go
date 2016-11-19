@@ -22,34 +22,23 @@ import (
 	"github.com/FTwOoO/vpncore/enc"
 )
 
-
 type cryptConn struct {
 	net.Conn
-	B enc.BlockCrypt
+	R *enc.CryptionReadWriter
 }
 
-func NewCryptConn(conn net.Conn, block enc.BlockCrypt) (*cryptConn, error) {
+func NewCryptConn(conn net.Conn, stream enc.StreamCipher) (*cryptConn, error) {
 	connection := new(cryptConn)
 	connection.Conn = conn
-	connection.B = block
+	connection.R = enc.NewCryptionReadWriter(stream, conn)
+
 	return connection, nil
 }
 
 func (c *cryptConn) Read(b []byte) (n int, err error) {
-
-	buf := make([]byte, len(b))
-
-	n, err = c.Conn.Read(buf)
-	if err != nil {
-		return
-	}
-
-	c.B.Decrypt(b[:n], buf[:n])
-	return
+	return c.R.Read(b)
 }
 
 func (c *cryptConn) Write(b []byte) (n int, err error) {
-	buf := make([]byte, len(b))
-	c.B.Encrypt(buf, b)
-	return c.Conn.Write(buf)
+	return c.R.Write(b)
 }
