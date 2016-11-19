@@ -28,7 +28,7 @@ import (
 	"net"
 	"os"
 	"strconv"
-	"github.com/FTwOoO/vpncore/cmd"
+	"github.com/FTwOoO/vpncore/common/cmd"
 )
 
 func addRouteToHost(iface string, dest net.IP, nextHop net.IP) (err error) {
