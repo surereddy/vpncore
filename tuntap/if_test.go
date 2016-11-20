@@ -23,7 +23,7 @@ import (
 	"fmt"
 	"encoding/hex"
 	"sync"
-	"github.com/FTwOoO/vpncore/tcpip"
+	"github.com/FTwOoO/vpncore/net/tcpip"
 	"github.com/FTwOoO/vpncore/cmd"
 	"github.com/FTwOoO/vpncore/cmd/routes"
 )
