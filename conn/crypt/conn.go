@@ -19,18 +19,18 @@ package crypt
 
 import (
 	"net"
-	"github.com/FTwOoO/vpncore/enc"
+	"github.com/FTwOoO/vpncore/crypto"
 )
 
 type cryptConn struct {
 	net.Conn
-	R *enc.CryptionReadWriter
+	R *crypto.CryptionReadWriter
 }
 
-func NewCryptConn(conn net.Conn, stream enc.StreamCipher) (*cryptConn, error) {
+func NewCryptConn(conn net.Conn, stream crypto.StreamCipher) (*cryptConn, error) {
 	connection := new(cryptConn)
 	connection.Conn = conn
-	connection.R = enc.NewCryptionReadWriter(stream, conn)
+	connection.R = crypto.NewCryptionReadWriter(stream, conn)
 
 	return connection, nil
 }

@@ -1,10 +1,10 @@
-package enc
+package crypto
 
 import (
 	"golang.org/x/crypto/pbkdf2"
 	"crypto/sha1"
 	"errors"
-	"github.com/FTwOoO/vpncore/enc/cipher"
+	"github.com/FTwOoO/vpncore/crypto/cipher"
 )
 
 

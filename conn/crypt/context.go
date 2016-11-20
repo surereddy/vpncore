@@ -19,17 +19,17 @@ package crypt
 
 import (
 	"net"
-	"github.com/FTwOoO/vpncore/enc"
+	"github.com/FTwOoO/vpncore/crypto"
 	"github.com/FTwOoO/vpncore/conn"
 )
 
 type CryptLayerContext struct {
-	*enc.EncrytionConfig
+	*crypto.EncrytionConfig
 }
 
 func (this *CryptLayerContext) Dial(c net.Conn) (net.Conn, error) {
 
-	cipher, err := enc.NewCipher(this.EncrytionConfig)
+	cipher, err := crypto.NewCipher(this.EncrytionConfig)
 	if err != nil {
 		return nil, err
 	}
@@ -38,7 +38,7 @@ func (this *CryptLayerContext) Dial(c net.Conn) (net.Conn, error) {
 }
 
 func (this *CryptLayerContext) NewListener(l net.Listener) (net.Listener, error) {
-	cipher, err := enc.NewCipher(this.EncrytionConfig)
+	cipher, err := crypto.NewCipher(this.EncrytionConfig)
 	if err != nil {
 		return nil, err
 	}

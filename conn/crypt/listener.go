@@ -19,12 +19,12 @@ package crypt
 
 import (
 	"net"
-	"github.com/FTwOoO/vpncore/enc"
+	"github.com/FTwOoO/vpncore/crypto"
 )
 
 type cryptListener struct {
 	net.Listener
-	cipher enc.StreamCipher
+	cipher crypto.StreamCipher
 }
 
 func (l *cryptListener) Accept() (net.Conn, error) {

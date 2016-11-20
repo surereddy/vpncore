@@ -15,7 +15,7 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package enc
+package crypto
 
 import (
 	"github.com/FTwOoO/vpncore/common"

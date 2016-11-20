@@ -17,7 +17,7 @@ BenchmarkSalsa20-4  	  300000	      5118 ns/op
  */
 
 
-package enc
+package crypto
 
 import (
 	"bytes"
@@ -26,7 +26,7 @@ import (
 	"io"
 	"testing"
 	"fmt"
-	"github.com/FTwOoO/vpncore/enc/cipher"
+	"github.com/FTwOoO/vpncore/crypto/cipher"
 )
 
 func EnryptionOne(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
