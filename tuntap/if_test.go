@@ -24,9 +24,8 @@ import (
 	"encoding/hex"
 	"sync"
 	"github.com/FTwOoO/vpncore/tcpip"
-	"github.com/FTwOoO/vpncore/routes"
-
-	"github.com/FTwOoO/vpncore/common/cmd"
+	"github.com/FTwOoO/vpncore/cmd"
+	"github.com/FTwOoO/vpncore/cmd/routes"
 )
 
 const BUFFERSIZE = 1522
