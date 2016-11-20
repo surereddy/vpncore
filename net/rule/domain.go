@@ -16,7 +16,7 @@ const (
 
 type DomainRules []DomainRule
 
-func (self DomainRules) findGroup(domain string) string {
+func (self DomainRules) FindGroup(domain string) string {
 	for _, rule := range self {
 		if rule.Match(domain) {
 			return rule.Group

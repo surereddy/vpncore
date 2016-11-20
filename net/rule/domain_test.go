@@ -32,7 +32,7 @@ func TestDomainRules(t *testing.T) {
 
 	rules := DomainRules{rule}
 
-	g := rules.findGroup("baidu.com")
+	g := rules.FindGroup("baidu.com")
 	if g != CN_GROUP {
 		t.Fatal("rules match fail!")
 	}
