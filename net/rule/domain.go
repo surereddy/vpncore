@@ -2,6 +2,8 @@ package rule
 
 import (
 	"strings"
+	"github.com/miekg/dns"
+	"github.com/miekg/dns/dnsutil"
 )
 
 const (
@@ -17,6 +19,11 @@ const (
 type DomainRules []DomainRule
 
 func (self DomainRules) FindGroup(domain string) string {
+
+	if dns.IsFqdn(domain) {
+		domain = dnsutil.TrimDomainName(domain, ".")
+	}
+
 	for _, rule := range self {
 		if rule.Match(domain) {
 			return rule.Group

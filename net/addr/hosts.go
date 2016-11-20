@@ -8,13 +8,6 @@ import (
 const 	dnsDefaultTtl = 600
 
 
-func UnFqdn(s string) string {
-	if dns.IsFqdn(s) {
-		return dnsutil.TrimDomainName(s, ".")
-	}
-	return s
-}
-
 type Host struct {
 	Name string `toml:"name"`
 	Ip   IPList `toml:"ip"`
@@ -26,7 +19,10 @@ func (self Hosts) Get(req *dns.Msg) (*dns.Msg, bool) {
 	question := req.Question[0]
 
 	var ips IPList
-	queryHost := UnFqdn(question.Name)
+	queryHost := question.Name
+	if dns.IsFqdn(queryHost) {
+		queryHost = dnsutil.TrimDomainName(queryHost, ".")
+	}
 
 	for _, host := range self {
 		if host.Name == queryHost {
