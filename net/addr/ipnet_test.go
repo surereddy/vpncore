@@ -20,6 +20,8 @@ package addr
 import (
 	"testing"
 	"net"
+	"github.com/FTwOoO/vpncore/common"
+	"fmt"
 )
 
 func TestIPNetList_Contains(t *testing.T) {
@@ -39,10 +41,30 @@ func TestIPNetList_Contains(t *testing.T) {
 		t.Fatal(err)
 	}
 
+	fmt.Print(netl)
 	for _, ip := range ips {
 		if netl.Contains(ip) != true {
-			t.Fatalf("Ip %v is not in %v", ip, netl)
+			t.Fatalf("Ip(%d) %v is not in %v", ip, common.IPToUInt(ip), netl)
 		}
+	}
+
+}
+
+
+func TestNewIPRangeByRange(t *testing.T) {
+	ip1:= net.IP{32, 32, 31, 5}
+	ip2:= net.IP{32, 32, 31, 10}
+
+	start := common.IPToUInt(ip1)
+	end := common.IPToUInt(ip2)
+	mid := (start + end) / 2
+	ip3 := common.IP4FromUint32(mid)
+
+	r := NewIPRangeByRange(start, end)
+	fmt.Print(r.Subnet)
+	if (!r.Subnet.Contains(ip1) || !r.Subnet.Contains(ip2) || !r.Subnet.Contains(ip3)||
+		!r.Contains(ip1) || !r.Contains(ip2) || !r.Contains(ip3) ) {
+		t.Failed()
 	}
 
 }

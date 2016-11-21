@@ -35,7 +35,7 @@ func (a IPList) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 func (a IPList) Less(i, j int) bool {
-	return common.IPToInt(a[i]) < common.IPToInt(a[j])
+	return common.IPToUInt(a[i]) < common.IPToUInt(a[j])
 }
 
 func (a IPList) Sort() {
@@ -46,7 +46,7 @@ func (self IPList) Contains(ip net.IP) bool {
 	// TODO: support IPv6
 
 	i := sort.Search(len(self), func(i int) bool {
-		return common.IPToInt(self[i]) >= common.IPToInt(ip)
+		return common.IPToUInt(self[i]) >= common.IPToUInt(ip)
 	})
 	return i < len(self) && self[i].Equal(ip)
 }

@@ -23,13 +23,59 @@ import (
 	"fmt"
 	"sort"
 	"github.com/FTwOoO/vpncore/common"
+	"math"
+)
+
+type AddressType uint
+
+const (
+	IPv4 = AddressType(4)
+	IPv6 = AddressType(6)
+	Domain = AddressType(7)
 )
 
 type IPRange struct {
-	Subnet *net.IPNet
-	Start  uint32
-	End    uint32
+	version AddressType
+	Subnet  *net.IPNet
+	Start   uint32
+	End     uint32
 }
+
+func NewIPRangeByRange(start uint32, end uint32) *IPRange {
+	//TODO: need ipv6 version?
+	count := end - start
+	if count <= 0 {
+		return nil
+	}
+
+	ones := net.IPv4len * 8 - int(math.Floor(math.Log2(float64(count)) + 0.5))
+	mark := net.CIDRMask(ones, net.IPv4len * 8)
+	ip := common.IP4FromUint32(start)
+	subnet := net.IPNet{IP: ip.Mask(mark), Mask: mark}
+	return &IPRange{Start:start, End:end, Subnet:&subnet, version:IPv4}
+}
+
+func NewIPRangeByIPNet(subnet *net.IPNet) *IPRange {
+	if ip4 := subnet.IP.To4(); ip4 != nil {
+		start := common.IPToUInt(ip4)
+
+		end := start + ^common.IPToUInt(ip4.Mask(subnet.Mask))
+		return &IPRange{Subnet:subnet, Start:start, End:end, version:IPv4}
+	}
+	return nil
+}
+
+func (a *IPRange) Contains(ip net.IP) bool {
+	if ip4 := ip.To4(); ip4 != nil {
+		if a.version == IPv4 {
+			ipval := common.IPToUInt(ip4)
+			return a.End >= ipval && a.Start <= ipval
+		}
+	}
+
+	return false
+}
+
 type IPNetList []IPRange
 
 func (a IPNetList) Len() int {
@@ -46,21 +92,22 @@ func (a IPNetList) Sort() {
 	sort.Sort(a)
 }
 
+// notice: used before Sort() called
 func (a IPNetList) Contains(ip net.IP) bool {
-	ipval := common.IPToInt(ip.To4())
+	if ip4 := ip.To4(); ip4 != nil {
 
-	l := len(a)
-	i := sort.Search(l, func(i int) bool {
-		n := a[i]
-		return n.End >= ipval
-	})
+		l := len(a)
+		i := sort.Search(l, func(i int) bool {
+			r := a[i]
+			return r.Contains(ip4)
+		})
 
-	if i < l {
-		n := a[i]
-		if n.Start <= ipval {
+		if i < l {
 			return true
 		}
+		return false
 	}
+
 	return false
 }
 
@@ -82,10 +129,9 @@ func (self *IPNetList) UnmarshalTOML(data []byte) error {
 			fmt.Println("ERR!")
 			return err
 		} else {
-			start := common.IPToInt(ipNet.IP)
-			end := start + ^common.IPToInt(net.IP(ipNet.Mask))
+			r := *NewIPRangeByIPNet(ipNet)
+			*self = append(*self, r)
 
-			*self = append(*self, IPRange{Subnet:ipNet, Start:start, End:end})
 		}
 	}
 
