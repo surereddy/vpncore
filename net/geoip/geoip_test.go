@@ -21,8 +21,8 @@ import (
 	"testing"
 	"time"
 	"fmt"
-	"net"
 	"math/rand"
+	mtesting "github.com/FTwOoO/vpncore/testing"
 )
 
 func BenchmarkMaxMindDBCountry(b *testing.B) {
@@ -38,7 +38,7 @@ func BenchmarkMaxMindDBCountry(b *testing.B) {
 	r := rand.New(rand.NewSource(0))
 
 	for i := 0; i < b.N; i++ {
-		ip := randomIPv4Address(b, r)
+		ip := mtesting.RandomIPv4Address(r)
 		isCN, err := db.IsChineseIP(ip)
 		country, _ := db.Country(ip)
 		if err != nil {
@@ -51,8 +51,3 @@ func BenchmarkMaxMindDBCountry(b *testing.B) {
 
 }
 
-func randomIPv4Address(b *testing.B, r *rand.Rand) net.IP {
-	num := r.Uint32()
-	return []byte{byte(num >> 24), byte(num >> 16), byte(num >> 8),
-		byte(num)}
-}
