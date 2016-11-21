@@ -39,6 +39,7 @@ type IPRange struct {
 	Subnet  *net.IPNet
 	Start   uint32
 	End     uint32
+	Info    interface{}
 }
 
 func NewIPRangeByRange(start uint32, end uint32) *IPRange {
@@ -55,14 +56,27 @@ func NewIPRangeByRange(start uint32, end uint32) *IPRange {
 	return &IPRange{Start:start, End:end, Subnet:&subnet, version:IPv4}
 }
 
+func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
+	if ip4 := ip.To4(); ip4 != nil {
+		start := common.IPToUInt(ip)
+		end := start + count - 1
+		return NewIPRangeByRange(start, end)
+	}
+	return nil
+}
+
 func NewIPRangeByIPNet(subnet *net.IPNet) *IPRange {
 	if ip4 := subnet.IP.To4(); ip4 != nil {
 		start := common.IPToUInt(ip4)
-
 		end := start + ^common.IPToUInt(ip4.Mask(subnet.Mask))
 		return &IPRange{Subnet:subnet, Start:start, End:end, version:IPv4}
 	}
 	return nil
+}
+
+func (a *IPRange) UpdateInfo(info interface{}) *IPRange {
+	a.Info = info
+	return a
 }
 
 func (a *IPRange) Contains(ip net.IP) bool {
@@ -76,24 +90,28 @@ func (a *IPRange) Contains(ip net.IP) bool {
 	return false
 }
 
-type IPNetList []IPRange
+func (a *IPRange) Less(b *IPRange) bool {
+	return a.End < b.End
+}
 
-func (a IPNetList) Len() int {
+type IPRanges []*IPRange
+
+func (a IPRanges) Len() int {
 	return len(a)
 }
-func (a IPNetList) Less(i, j int) bool {
-	return a[i].End < a[j].End
+func (a IPRanges) Less(i, j int) bool {
+	return a[i].Less(a[j])
 }
-func (a IPNetList) Swap(i, j int) {
+func (a IPRanges) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 
-func (a IPNetList) Sort() {
+func (a IPRanges) Sort() {
 	sort.Sort(a)
 }
 
 // notice: used before Sort() called
-func (a IPNetList) Contains(ip net.IP) bool {
+func (a IPRanges) Contains(ip net.IP) bool {
 	if ip4 := ip.To4(); ip4 != nil {
 
 		l := len(a)
@@ -111,7 +129,26 @@ func (a IPNetList) Contains(ip net.IP) bool {
 	return false
 }
 
-func (self *IPNetList) UnmarshalTOML(data []byte) error {
+func (a IPRanges) Get(ip net.IP) *IPRange {
+
+	if ip4 := ip.To4(); ip4 != nil {
+
+		l := len(a)
+		i := sort.Search(l, func(i int) bool {
+			r := a[i]
+			return r.Contains(ip4)
+		})
+
+		if i < l {
+			return a[i]
+		}
+		return nil
+	}
+
+	return nil
+}
+
+func (self *IPRanges) UnmarshalTOML(data []byte) error {
 	s := string(data)
 	s = strings.TrimSpace(s)
 	s = strings.Trim(s, "[]")
@@ -129,7 +166,7 @@ func (self *IPNetList) UnmarshalTOML(data []byte) error {
 			fmt.Println("ERR!")
 			return err
 		} else {
-			r := *NewIPRangeByIPNet(ipNet)
+			r := NewIPRangeByIPNet(ipNet)
 			*self = append(*self, r)
 
 		}

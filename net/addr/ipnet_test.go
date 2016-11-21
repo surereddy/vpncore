@@ -24,7 +24,7 @@ import (
 	"fmt"
 )
 
-func TestIPNetList_Contains(t *testing.T) {
+func TestIPRanges_Contains(t *testing.T) {
 	ips := IPList{
 		net.IP{32, 32, 32, 5},
 		net.IP{17, 3, 2, 2},
@@ -32,7 +32,7 @@ func TestIPNetList_Contains(t *testing.T) {
 		net.IP{22, 33, 44, 253},
 	}
 
-	netl := new(IPNetList)
+	netl := new(IPRanges)
 	err := netl.UnmarshalTOML([]byte(`[
 	    "32.32.32.0/24", "17.3.4.2/16", "22.33.44.253/30",
 	    ]`))
@@ -68,3 +68,4 @@ func TestNewIPRangeByRange(t *testing.T) {
 	}
 
 }
+

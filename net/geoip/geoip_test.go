@@ -48,6 +48,11 @@ func BenchmarkMaxMindDBCountry(b *testing.B) {
 			country.Country.IsoCode, country.RegisteredCountry.IsoCode)
 	}
 	fmt.Printf("Time used: %s\n", time.Since(start))
-
 }
 
+
+func TestGeoIpQuery(t *testing.T) {
+	if  GeoIpQuery("36.52.96.1") != "JP" {
+		t.Failed()
+	}
+}

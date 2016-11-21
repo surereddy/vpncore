@@ -9,7 +9,7 @@ import (
 
 type IPBlocker struct {
 	Ip  addr.IPList
-	Net addr.IPNetList
+	Net addr.IPRanges
 }
 
 func NewIPBlocker(ips addr.IPList) (*IPBlocker) {

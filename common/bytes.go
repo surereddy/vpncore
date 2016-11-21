@@ -4,26 +4,9 @@ import (
 	"encoding/hex"
 	"strings"
 	"strconv"
-	"encoding/binary"
-	"net"
 )
 
-func IPToUInt(ip net.IP) uint32 {
-	// net.ParseIP will return 16 bytes for IPv4,
-	// but we cant stop user creating 4 bytes for IPv4 bytes using net.IP{N,N,N,N}
-	//
-	if len(ip) == net.IPv4len {
-		return binary.BigEndian.Uint32(ip)
-	}
 
-	return 0
-}
-
-func IP4FromUint32(v uint32) net.IP {
-	ip := make([]byte, net.IPv4len)
-	binary.BigEndian.PutUint32(ip, v)
-	return ip
-}
 
 
 func ByteToHexString(value byte) string {
