@@ -8,6 +8,19 @@ import (
 
 
 
+func BytesEqual(x, y []byte) bool {
+	// copy from net.ip.go:bytesEqual()
+
+	if len(x) != len(y) {
+		return false
+	}
+	for i, b := range x {
+		if y[i] != b {
+			return false
+		}
+	}
+	return true
+}
 
 func ByteToHexString(value byte) string {
 	return hex.EncodeToString([]byte{value})
