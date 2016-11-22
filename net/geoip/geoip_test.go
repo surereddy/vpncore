@@ -52,7 +52,14 @@ func BenchmarkMaxMindDBCountry(b *testing.B) {
 
 
 func TestGeoIpQuery(t *testing.T) {
-	if  GeoIpQuery("36.52.96.1") != "JP" {
-		t.Failed()
+
+	country := GeoIpQuery("1.0.0.1")
+	if  country != "AU" {
+		t.Fail()
+	}
+
+	country = GeoIpQuery("1.2.17.1")
+	if country != "CN" {
+		t.Fail()
 	}
 }

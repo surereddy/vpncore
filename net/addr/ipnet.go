@@ -44,21 +44,22 @@ type IPRange struct {
 
 func NewIPRangeByRange(start uint32, end uint32) *IPRange {
 	//TODO: need ipv6 version?
-	count := end - start
+	count := end - start + 1
 	if count <= 0 {
 		return nil
 	}
 
 	ones := net.IPv4len * 8 - int(math.Floor(math.Log2(float64(count)) + 0.5))
-	mark := net.CIDRMask(ones, net.IPv4len * 8)
+	mask := net.CIDRMask(ones, net.IPv4len * 8)
 	ip := common.IP4FromUint32(start)
-	subnet := net.IPNet{IP: ip.Mask(mark), Mask: mark}
+	subnet := net.IPNet{IP: ip.Mask(mask), Mask: mask}
+	//fmt.Printf("start %x, ip %s subnet %s mask %d\n", start, ip, subnet, mask)
 	return &IPRange{Start:start, End:end, Subnet:&subnet, version:IPv4}
 }
 
 func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
 	if ip4 := ip.To4(); ip4 != nil {
-		start := common.IPToUInt(ip)
+		start := common.IP4ToUInt32(ip4)
 		end := start + count - 1
 		return NewIPRangeByRange(start, end)
 	}
@@ -67,8 +68,13 @@ func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
 
 func NewIPRangeByIPNet(subnet *net.IPNet) *IPRange {
 	if ip4 := subnet.IP.To4(); ip4 != nil {
-		start := common.IPToUInt(ip4)
-		end := start + ^common.IPToUInt(ip4.Mask(subnet.Mask))
+		maskedIp := subnet.IP.Mask(subnet.Mask)
+		start := common.IP4ToUInt32(maskedIp)
+		end := start + ^common.IP4ToUInt32(net.IP(subnet.Mask))
+
+		if end < start {
+			return nil
+		}
 		return &IPRange{Subnet:subnet, Start:start, End:end, version:IPv4}
 	}
 	return nil
@@ -82,7 +88,7 @@ func (a *IPRange) UpdateInfo(info interface{}) *IPRange {
 func (a *IPRange) Contains(ip net.IP) bool {
 	if ip4 := ip.To4(); ip4 != nil {
 		if a.version == IPv4 {
-			ipval := common.IPToUInt(ip4)
+			ipval := common.IP4ToUInt32(ip4)
 			return a.End >= ipval && a.Start <= ipval
 		}
 	}
@@ -91,7 +97,7 @@ func (a *IPRange) Contains(ip net.IP) bool {
 }
 
 func (a *IPRange) Less(b *IPRange) bool {
-	return a.End < b.End
+	return a.End < b.Start
 }
 
 type IPRanges []*IPRange
@@ -112,18 +118,12 @@ func (a IPRanges) Sort() {
 
 // notice: used before Sort() called
 func (a IPRanges) Contains(ip net.IP) bool {
-	if ip4 := ip.To4(); ip4 != nil {
 
-		l := len(a)
-		i := sort.Search(l, func(i int) bool {
-			r := a[i]
-			return r.Contains(ip4)
-		})
+	n := len(a)
+	i := a.search(ip)
 
-		if i < l {
-			return true
-		}
-		return false
+	if i < n {
+		return true
 	}
 
 	return false
@@ -131,21 +131,38 @@ func (a IPRanges) Contains(ip net.IP) bool {
 
 func (a IPRanges) Get(ip net.IP) *IPRange {
 
+	n := len(a)
+	i := a.search(ip)
+
+	if i < n {
+		return a[i]
+	}
+	return nil
+
+}
+
+func (a IPRanges) search(ip net.IP) int {
 	if ip4 := ip.To4(); ip4 != nil {
+		ipval := common.IP4ToUInt32(ip4)
+		fmt.Printf("Start search %d \n", ipval)
+		n := len(a)
 
-		l := len(a)
-		i := sort.Search(l, func(i int) bool {
-			r := a[i]
-			return r.Contains(ip4)
-		})
+		i, j := 0, n
+		for i < j {
+			h := i + (j - i) / 2 // avoid overflow when computing h
+			r := a[h]
 
-		if i < l {
-			return a[i]
+			if ipval > r.End {
+				i = h + 1
+			} else if ipval < r.Start {
+				j = h
+			} else {
+				return h
+			}
 		}
-		return nil
 	}
 
-	return nil
+	return -1
 }
 
 func (self *IPRanges) UnmarshalTOML(data []byte) error {

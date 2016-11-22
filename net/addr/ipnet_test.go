@@ -41,10 +41,9 @@ func TestIPRanges_Contains(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	fmt.Print(netl)
 	for _, ip := range ips {
 		if netl.Contains(ip) != true {
-			t.Fatalf("Ip(%d) %v is not in %v", ip, common.IPToUInt(ip), netl)
+			t.Fatalf("Ip %s(%d) is not in %v", ip.String(), common.IP4ToUInt32(ip), netl)
 		}
 	}
 
@@ -55,8 +54,8 @@ func TestNewIPRangeByRange(t *testing.T) {
 	ip1:= net.IP{32, 32, 31, 5}
 	ip2:= net.IP{32, 32, 31, 10}
 
-	start := common.IPToUInt(ip1)
-	end := common.IPToUInt(ip2)
+	start := common.IP4ToUInt32(ip1)
+	end := common.IP4ToUInt32(ip2)
 	mid := (start + end) / 2
 	ip3 := common.IP4FromUint32(mid)
 
