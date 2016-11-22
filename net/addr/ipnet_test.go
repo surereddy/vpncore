@@ -21,7 +21,6 @@ import (
 	"testing"
 	"net"
 	"github.com/FTwOoO/vpncore/common"
-	"fmt"
 )
 
 func TestIPRanges_Contains(t *testing.T) {
@@ -60,9 +59,7 @@ func TestNewIPRangeByRange(t *testing.T) {
 	ip3 := common.IP4FromUint32(mid)
 
 	r := NewIPRangeByRange(start, end)
-	fmt.Print(r.Subnet)
-	if (!r.Subnet.Contains(ip1) || !r.Subnet.Contains(ip2) || !r.Subnet.Contains(ip3)||
-		!r.Contains(ip1) || !r.Contains(ip2) || !r.Contains(ip3) ) {
+	if (!r.Contains(ip1) || !r.Contains(ip2) || !r.Contains(ip3) ) {
 		t.Failed()
 	}
 

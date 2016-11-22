@@ -23,7 +23,6 @@ import (
 	"fmt"
 	"sort"
 	"github.com/FTwOoO/vpncore/common"
-	"math"
 )
 
 type AddressType uint
@@ -36,10 +35,9 @@ const (
 
 type IPRange struct {
 	version AddressType
-	Subnet  *net.IPNet
 	Start   uint32
 	End     uint32
-	Info    interface{}
+	Group   string
 }
 
 func NewIPRangeByRange(start uint32, end uint32) *IPRange {
@@ -49,12 +47,15 @@ func NewIPRangeByRange(start uint32, end uint32) *IPRange {
 		return nil
 	}
 
+	/*
 	ones := net.IPv4len * 8 - int(math.Floor(math.Log2(float64(count)) + 0.5))
 	mask := net.CIDRMask(ones, net.IPv4len * 8)
 	ip := common.IP4FromUint32(start)
 	subnet := net.IPNet{IP: ip.Mask(mask), Mask: mask}
-	//fmt.Printf("start %x, ip %s subnet %s mask %d\n", start, ip, subnet, mask)
-	return &IPRange{Start:start, End:end, Subnet:&subnet, version:IPv4}
+	fmt.Printf("start %x, ip %s subnet %s mask %d\n", start, ip, subnet, mask)*/
+
+
+	return &IPRange{Start:start, End:end, version:IPv4}
 }
 
 func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
@@ -75,13 +76,13 @@ func NewIPRangeByIPNet(subnet *net.IPNet) *IPRange {
 		if end < start {
 			return nil
 		}
-		return &IPRange{Subnet:subnet, Start:start, End:end, version:IPv4}
+		return &IPRange{Start:start, End:end, version:IPv4}
 	}
 	return nil
 }
 
-func (a *IPRange) UpdateInfo(info interface{}) *IPRange {
-	a.Info = info
+func (a *IPRange) UpdateInfo(info string) *IPRange {
+	a.Group = info
 	return a
 }
 
@@ -144,7 +145,6 @@ func (a IPRanges) Get(ip net.IP) *IPRange {
 func (a IPRanges) search(ip net.IP) int {
 	if ip4 := ip.To4(); ip4 != nil {
 		ipval := common.IP4ToUInt32(ip4)
-		fmt.Printf("Start search %d \n", ipval)
 		n := len(a)
 
 		i, j := 0, n
