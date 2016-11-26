@@ -15,35 +15,13 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package conn
-
+package transport
 import (
 	"net"
+	"github.com/FTwOoO/vpncore/conn"
 )
-
-func NewListener(contexts []ConnLayerContext) (l net.Listener, err error) {
-	if len(contexts) < 1 {
-		return nil, ErrInvalidArgs
-	}
-
-	ctx := contexts[0]
-	if ctx.Layer() != STREAM_LAYER {
-		return nil, ErrInvalidCtx
-	}
-
-	l, err = ctx.NewListener(nil)
-	if err != nil {
-		return
-	}
-
-	for _, ctx := range contexts[1:] {
-		l, err = ctx.NewListener(l)
-		if err != nil {
-			return
-		}
-
-	}
-
-	return l, err
-
+type transportConn struct {
+	net.Conn
+	proto conn.TransportProtocol
 }
+

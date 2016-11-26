@@ -15,38 +15,49 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package crypt
+package udp
+
 
 import (
+	"reflect"
 	"net"
-	"github.com/FTwOoO/vpncore/crypto"
 	"github.com/FTwOoO/vpncore/conn"
 )
 
-type CryptLayerContext struct {
-	*crypto.EncrytionConfig
+type UdpMessageContext struct {
 }
 
-func (this *CryptLayerContext) Dial(c net.Conn) (net.Conn, error) {
-
-	cipher, err := crypto.NewCipher(this.EncrytionConfig)
+func NewUdpMessageContext(uaddr string)  *UdpMessageContext {
+		// Resolve UDP address
+	uaddr2, err := net.ResolveUDPAddr("udp", uaddr)
 	if err != nil {
 		return nil, err
 	}
 
-	return NewCryptConn(c, cipher)
-}
-
-func (this *CryptLayerContext) NewListener(l net.Listener) (net.Listener, error) {
-	cipher, err := crypto.NewCipher(this.EncrytionConfig)
+	// Bind and setup UDP connection
+	conn, err := net.ListenUDP("udp", uaddr2)
 	if err != nil {
 		return nil, err
 	}
 
-	return &cryptListener{Listener:l, cipher:cipher}, nil
+	// Start server
+	s := &Server{
+		conn: conn,
+		peers: make(map[string]*client),
+	}
+	return &ProtobufMessageContext{msgTypes:msgTypes, rw:rw}
 }
 
 
-func (this *CryptLayerContext) 	Layer() conn.ConnLayer {
-	return conn.CRYPT_LAYER
+func (self *UdpMessageContext) Valid() (bool, error) {
+	return true, nil
 }
+
+
+func (self *UdpMessageContext) Dial() (conn.MessageConn, error) {
+
+}
+func (self *UdpMessageContext) NewListener() (conn.MessageListener, error) {
+
+}
+

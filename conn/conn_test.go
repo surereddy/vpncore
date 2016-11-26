@@ -27,8 +27,8 @@ import (
 	crand "crypto/rand"
 	mrand "math/rand"
 	"sync"
-	"github.com/FTwOoO/vpncore/conn/crypt"
-	"github.com/FTwOoO/vpncore/conn/stream"
+	"github.com/FTwOoO/vpncore/conn/stream/crypt"
+	"github.com/FTwOoO/vpncore/conn/stream/transport"
 	"github.com/FTwOoO/vpncore/conn"
 )
 
@@ -48,15 +48,15 @@ func TestNewListener(t *testing.T) {
 	}
 }
 
-func testOneConnection(t *testing.T, proto conn.TransProtocol, cipher crypto.Cipher, port int, password string, testDatalen int) {
+func testOneConnection(t *testing.T, proto conn.TransportProtocol, cipher crypto.Cipher, port int, password string, testDatalen int) {
 
-	context1 := &stream.StreamLayerContext{
+	context1 := &transport.TransportStreamContext{
 		Protocol:proto,
 		ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
 		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
-	context2 := &crypt.CryptLayerContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
+	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
 
-	l, err := conn.NewListener([]conn.ConnLayerContext{context1, context2})
+	l, err := conn.NewListener([]conn.StreamContext{context1, context2})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -103,7 +103,7 @@ func testOneConnection(t *testing.T, proto conn.TransProtocol, cipher crypto.Cip
 	go func() {
 		defer wg.Done()
 
-		connection, err := conn.Dial([]conn.ConnLayerContext{context1, context2})
+		connection, err := conn.Dial([]conn.StreamContext{context1, context2})
 		if err != nil {
 			t.Fatal(err)
 		}

@@ -15,35 +15,4 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package conn
-
-import (
-	"net"
-)
-
-func Dial(contexts []ConnLayerContext) (c net.Conn, err error) {
-	if len(contexts) < 1 {
-		return nil, ErrInvalidArgs
-	}
-
-	ctx := contexts[0]
-	if ctx.Layer() != STREAM_LAYER {
-		return nil, ErrInvalidCtx
-	}
-
-	c, err = ctx.Dial(nil)
-	if err != nil {
-		return
-	}
-
-	for _, ctx := range contexts[1:] {
-		c, err = ctx.Dial(c)
-		if err != nil {
-			return
-		}
-
-	}
-
-	return c, err
-}
-
+package udp

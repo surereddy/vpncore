@@ -15,7 +15,7 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package stream
+package transport
 
 import (
 	"net"
@@ -23,13 +23,13 @@ import (
 	"github.com/FTwOoO/vpncore/conn"
 )
 
-type StreamLayerContext struct {
-	Protocol   conn.TransProtocol
+type TransportStreamContext struct {
+	Protocol   conn.TransportProtocol
 	ListenAddr string
 	RemoveAddr string
 }
 
-func (this *StreamLayerContext) Dial(_ net.Conn) (net.Conn, error) {
+func (this *TransportStreamContext) Dial(_ net.Conn) (net.Conn, error) {
 
 	switch this.Protocol {
 	case conn.PROTO_TCP:
@@ -38,19 +38,17 @@ func (this *StreamLayerContext) Dial(_ net.Conn) (net.Conn, error) {
 			return nil, err
 		}
 
-		return &streamConn{Conn:c, proto:this.Protocol}, nil
+		return &transportConn{Conn:c, proto:this.Protocol}, nil
 
 
 	case conn.PROTO_KCP:
-		panic("not implemented!")
-	case conn.PROTO_OBFS4:
 		panic("not implemented!")
 	}
 
 	return nil, errors.New("Proto not supported!")
 }
 
-func (this *StreamLayerContext) NewListener(_ net.Listener) (net.Listener, error) {
+func (this *TransportStreamContext) NewListener(_ net.Listener) (net.Listener, error) {
 	switch this.Protocol {
 	case conn.PROTO_KCP:
 		panic("not implemented yet!")
@@ -64,13 +62,16 @@ func (this *StreamLayerContext) NewListener(_ net.Listener) (net.Listener, error
 		if err != nil {
 			return nil, err
 		}
-		return &streamListener{proto:this.Protocol, Listener:l}, nil
+		return &transportListener{proto:this.Protocol, Listener:l}, nil
 	default:
 		return nil, errors.New("UNKOWN PROTOCOL!")
 	}
 }
 
-func (this *StreamLayerContext) Layer() conn.ConnLayer {
-	return conn.STREAM_LAYER
+func (this *TransportStreamContext) Layer() conn.Layer {
+	return conn.TRANSPORT_LAYER
 }
 
+func (this *TransportStreamContext) Valid() (bool, error) {
+	return this.Protocol != "" && this.ListenAddr != "" && this.RemoveAddr != ""
+}

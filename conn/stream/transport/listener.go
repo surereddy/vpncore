@@ -15,13 +15,23 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package stream
+package transport
+
 import (
 	"net"
 	"github.com/FTwOoO/vpncore/conn"
 )
-type streamConn struct {
-	net.Conn
-	proto conn.TransProtocol
+
+type transportListener struct {
+	net.Listener
+	proto    conn.TransportProtocol
 }
 
+func (l *transportListener) Accept() (net.Conn, error) {
+	c, err := l.Listener.Accept()
+	if err != nil {
+		return nil, err
+	} else {
+		return &transportConn{Conn:c, proto:l.proto}, nil
+	}
+}
