@@ -29,7 +29,7 @@ type TransportStreamContext struct {
 	RemoveAddr string
 }
 
-func (this *TransportStreamContext) Dial(_ net.Conn) (net.Conn, error) {
+func (this *TransportStreamContext) Dial() (conn.StreamReadWriteCloser, error){
 
 	switch this.Protocol {
 	case conn.PROTO_TCP:
@@ -48,7 +48,7 @@ func (this *TransportStreamContext) Dial(_ net.Conn) (net.Conn, error) {
 	return nil, errors.New("Proto not supported!")
 }
 
-func (this *TransportStreamContext) NewListener(_ net.Listener) (net.Listener, error) {
+func (this *TransportStreamContext) Listen() (conn.StreamListener, error) {
 	switch this.Protocol {
 	case conn.PROTO_KCP:
 		panic("not implemented yet!")

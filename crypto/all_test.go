@@ -130,7 +130,7 @@ func EnryptionIO(t *testing.T, encrytion Cipher, testKey string, testDataLen int
 	result2 := make([]byte, len(alldata))
 
 	buf:= bytes.NewBuffer([]byte{}) // A Buffer needs no initialization.
-	r1 := NewCryptionReadWriter(stream, buf)
+	r1 := NewCryptionReadWriter(buf, stream)
 	r1.Write(data1)
 	r1.Write(data2)
 	r1.Write(data3)

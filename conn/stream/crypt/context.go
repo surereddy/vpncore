@@ -18,7 +18,6 @@
 package crypt
 
 import (
-	"net"
 	"github.com/FTwOoO/vpncore/crypto"
 	"github.com/FTwOoO/vpncore/conn"
 	"errors"
@@ -28,30 +27,12 @@ type CryptStreamContext struct {
 	*crypto.EncrytionConfig
 }
 
-func (this *CryptStreamContext) Dial(c net.Conn) (net.Conn, error) {
-
-	cipher, err := crypto.NewCipher(this.EncrytionConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewCryptConn(c, cipher)
-}
-
-func (this *CryptStreamContext) NewListener(l net.Listener) (net.Listener, error) {
-	cipher, err := crypto.NewCipher(this.EncrytionConfig)
-	if err != nil {
-		return nil, err
-	}
-
-	return &cryptListener{Listener:l, cipher:cipher}, nil
-}
-
-
 func (this *CryptStreamContext) Layer() conn.Layer {
 	return conn.CRYPTO_LAYER
 }
 
+
+//must called after init object
 func (this *CryptStreamContext) Valid() (bool, error) {
 	if this.EncrytionConfig == nil {
 		return false, errors.New("Need to set encrytion config!")
@@ -60,3 +41,11 @@ func (this *CryptStreamContext) Valid() (bool, error) {
 	return true, nil
 }
 
+func (this *CryptStreamContext) NewPipe(base conn.StreamReadWriteCloser) conn.StreamReadWriteCloser {
+	cipher, err := crypto.NewCipher(this.EncrytionConfig)
+	if err != nil {
+		return nil, err
+	}
+
+	return crypto.NewCryptionReadWriter(base, cipher)
+}

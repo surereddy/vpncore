@@ -24,21 +24,21 @@ import (
 
 type CryptionReadWriter struct {
 	stream CommonCipher
-	f      io.ReadWriter
+	base   io.ReadWriter
 }
 
-func NewCryptionReadWriter(stream CommonCipher, f io.ReadWriter) *CryptionReadWriter {
+func NewCryptionReadWriter(base io.ReadWriter, stream CommonCipher) *CryptionReadWriter {
 	return &CryptionReadWriter{
 		stream: stream,
-		f: f,
+		base: base,
 	}
 }
 
 func (this *CryptionReadWriter) Read(data []byte) (int, error) {
-	if this.f == nil {
+	if this.base == nil {
 		return 0, common.ErrObjectNotFound
 	}
-	nBytes, err := this.f.Read(data)
+	nBytes, err := this.base.Read(data)
 	if nBytes > 0 {
 		this.stream.Decrypt(data[:nBytes], data[:nBytes])
 	}
@@ -46,7 +46,7 @@ func (this *CryptionReadWriter) Read(data []byte) (int, error) {
 }
 
 func (this *CryptionReadWriter) Write(data []byte) (int, error) {
-	if this.f == nil {
+	if this.base == nil {
 		return 0, common.ErrObjectNotFound
 	}
 
@@ -55,14 +55,14 @@ func (this *CryptionReadWriter) Write(data []byte) (int, error) {
 	//dont change it
 	buf := make([]byte, len(data))
 	this.stream.Encrypt(buf, data)
-	return this.f.Write(buf)
+	return this.base.Write(buf)
 }
 
-func (this *CryptionReadWriter) Release() {
-	if c, ok := this.f.(io.Closer); ok {
+func (this *CryptionReadWriter) Close() error {
+	if c, ok := this.base.(io.Closer); ok {
 		c.(io.Closer).Close()
 	}
 
-	this.f = nil
+	this.base = nil
 	this.stream = nil
 }

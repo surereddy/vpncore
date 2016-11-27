@@ -40,25 +40,19 @@ func (server *MyServer) NewListener(contexts []Context) (l MessageListener, err 
 	var sl StreamListener
 	ctx, ok := ctx.(StreamCreationContext)
 	if ok {
-		sl, err = ctx.(StreamCreationContext).NewListener()
+		sl, err = ctx.(StreamCreationContext).Listen()
 		if err != nil {
 			return
 		}
 
 		var i int
-		for i, ctx = range contexts[1:] {
-
+		for i, ctx = range contexts[:] {
 			if _, ok := ctx.(StreamContext); !ok {
 				break
 			}
-
-			sl, err = ctx.(StreamContext).NewListener(sl)
-			if err != nil {
-				return
-			}
-
 		}
 
+		sl = stackStreamListener{Contexts:contexts[1:i]}
 		return server.newMessageListener(sl, contexts[i + 1:])
 
 	} else {
@@ -80,7 +74,7 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 			return nil, ErrInvalidCtx
 		}
 
-		ml, err = ctx.(MessageTransitionContext).NewListener(sl)
+		ml = &transMessageListener{StreamListener:sl, Context:ctx}
 		if err != nil {
 			return
 		}
@@ -91,7 +85,7 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 			return nil, ErrInvalidCtx
 		}
 
-		ml, err = ctx.(MessageCreationContext).NewListener()
+		ml, err = ctx.(MessageCreationContext).Listen()
 		if err != nil {
 			return
 		}
@@ -103,16 +97,13 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 		if _, ok := ctx.(MessageContext); !ok {
 			break
 		}
-
-		ml, err = ctx.(MessageContext).NewListener(ml)
-		if err != nil {
-			return
-		}
 	}
-
 	if i + 1 != len(contexts) {
 		return nil, ErrInvalidCtx
 	}
+
+	ml = stackMessageListener{Contexts:contexts[1:i]}
+
 
 	return
 }

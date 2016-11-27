@@ -23,6 +23,7 @@ import (
 	"strings"
 	"fmt"
 	"github.com/golang/protobuf/proto"
+	"io"
 )
 
 var (
@@ -39,7 +40,6 @@ const (
 	AUTH_LAYER = Layer(4)
 	APPCATIOIN_LAYER = Layer(5)
 )
-
 
 type TransportProtocol string
 
@@ -75,7 +75,7 @@ type Client interface {
 	//valid contexts pattern:
 	//	StreamCreationContext -> StreamContext* -> MessageTransitionContext -> MessageContext*
 	//	MessageCreationContext -> MessageContext*
-	Dial(contexts []Context) (MessageConn, error)
+	Dial(contexts []Context) (MessagegReadWriteCloser, error)
 }
 
 type Context interface {
@@ -85,42 +85,44 @@ type Context interface {
 
 type StreamCreationContext interface {
 	Context
-	Dial() (StreamConn, error)
-	NewListener() (StreamListener, error)
+	Dial() (StreamReadWriteCloser, error)
+	Listen() (StreamListener, error)
 }
 
 type StreamContext interface {
 	Context
-	Dial(StreamConn) (StreamConn, error)
-	NewListener(StreamListener) (StreamListener, error)
+	NewPipe(base StreamReadWriteCloser) StreamReadWriteCloser
 }
 
 type MessageCreationContext interface {
 	Context
-	Dial() (MessageConn, error)
-	NewListener() (MessageListener, error)
+	Dial() (MessagegReadWriteCloser, error)
+	Listen() (MessageListener, error)
 }
 
 type MessageTransitionContext interface {
 	Context
-	Dial(StreamConn) (MessageConn, error)
-	NewListener(StreamListener) (MessageListener, error)
+	NewPipe(StreamReadWriteCloser) MessagegReadWriteCloser
 }
 
 type MessageContext interface {
 	Context
-	Dial(MessageConn) (MessageConn, error)
-	NewListener(MessageListener) (MessageListener, error)
+	NewPipe(base MessagegReadWriteCloser) MessagegReadWriteCloser
 }
 
-type Message interface {
-	proto.Marshaler
-	proto.Unmarshaler
+type  StreamListener interface {
+	net.Listener
 }
 
-type MessageConn interface {
-	Receive() (Message, error)
-	Send(Message) error
+type  StreamReadWriteCloser interface {
+	io.ReadWriteCloser
+}
+
+type MessagegReadWriteCloser interface {
+	io.ReadWriteCloser
+
+	/*Read() (Message, error)
+	Write(Message) error
 	// Close closes the connection.
 	// Any blocked Read or Write operations will be unblocked and return errors.
 	Close() error
@@ -129,13 +131,12 @@ type MessageConn interface {
 	LocalAddr() net.Addr
 
 	// RemoteAddr returns the remote network address.
-	RemoteAddr() net.Addr
-
+	RemoteAddr() net.Addr*/
 }
 
 type  MessageListener interface {
 	// Accept waits for and returns the next connection to the listener.
-	Accept() (MessageConn, error)
+	Accept() (MessagegReadWriteCloser, error)
 
 	// Close closes the listener.
 	// Any blocked Accept operations will be unblocked and return errors.
@@ -145,15 +146,10 @@ type  MessageListener interface {
 	Addr() net.Addr
 }
 
-
-type  StreamListener interface {
-	net.Listener
+type Message interface {
+	proto.Marshaler
+	proto.Unmarshaler
 }
-
-type  StreamConn interface {
-	net.Conn
-}
-
 
 type Dialer interface {
 	Dial() (net.Conn, error)
@@ -177,10 +173,8 @@ type HandlerFunc func(*Session)
 func (f HandlerFunc) HandleSession(session *Session) {
 	f(session)
 }
-*/
 
-
-func CreateCodec(dialer Dialer, protocol MessageContext) (MessageConn, error) {
+func CreateCodec(dialer Dialer, protocol MessageContext) (MessagegReadWriteCloser, error) {
 	conn, err := dialer.Dial()
 	if err != nil {
 		return nil, err
@@ -192,3 +186,4 @@ func CreateCodec(dialer Dialer, protocol MessageContext) (MessageConn, error) {
 	}
 	return codec, nil
 }
+*/

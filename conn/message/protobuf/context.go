@@ -1,7 +1,6 @@
 package protobuf
 
 import (
-	"io"
 	"math"
 	"reflect"
 	"github.com/FTwOoO/vpncore/conn"
@@ -9,17 +8,16 @@ import (
 
 type ProtobufMessageContext struct {
 	msgTypes []reflect.Type
-	rw       io.ReadWriter
 }
 
-func NewProtobufMessageContext(msgTypes []reflect.Type, rw io.ReadWriter) *ProtobufMessageContext {
-	return &ProtobufMessageContext{msgTypes:msgTypes, rw:rw}
+func NewProtobufMessageContext(msgTypes []reflect.Type) *ProtobufMessageContext {
+	return &ProtobufMessageContext{msgTypes:msgTypes}
 }
 
-func (self *ProtobufMessageContext)NewCodec(_ conn.MessageConn) (conn.MessageConn, error) {
+func (self *ProtobufMessageContext) NewPipe(base conn.MessagegReadWriteCloser) conn.MessagegReadWriteCloser {
 
 	codec := &protobufCodec{
-		rw: self.rw,
+		rw: base,
 		headBuf: make([]byte, new(protobufPacketHeader).HeaderSize()),
 		maxRecv : math.MaxUint16,
 		maxSend : math.MaxUint16,
@@ -41,6 +39,6 @@ func (self *ProtobufMessageContext)NewCodec(_ conn.MessageConn) (conn.MessageCon
 }
 
 func (self *ProtobufMessageContext) Valid() (bool, error) {
-	return len(self.msgTypes) > 0 && self.rw != nil
+	return len(self.msgTypes) > 0
 }
 

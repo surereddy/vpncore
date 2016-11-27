@@ -51,7 +51,7 @@ func (c *protobufCodec) Receive() (interface{}, error) {
 		return nil, errors.New("Too Large Packet")
 	}
 	if cap(c.bodyBuf) < int(size) {
-		c.bodyBuf = make([]byte, size, size + 128)
+		c.bodyBuf = make([]byte, size + 128)
 	}
 	buff := c.bodyBuf[:size]
 	if _, err := io.ReadFull(c.rw, buff); err != nil {

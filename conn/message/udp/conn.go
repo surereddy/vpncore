@@ -28,7 +28,23 @@ type UdpMessageConn struct {
 	buf        []byte
 }
 
-func (this *UdpMessageConn) Receive() (conn.Message, error) {
+func NewUdpMessageConn(udpConn *net.UDPConn, remoteAddr *net.UDPAddr, buf []byte) (*UdpMessageConn, error) {
+
+	o := new(UdpMessageConn)
+	o.udpConn = udpConn
+	o.remoteAddr = remoteAddr
+
+	if buf == nil {
+		o.buf = make([]byte, 0x100000)
+	} else {
+		o.buf = buf
+	}
+
+	return o, nil
+}
+
+
+func (this *UdpMessageConn) Read(b []byte) (int, error)  {
 
 	this.buf = this.buf[:cap(this.buf)]
 	n, _, err := this.udpConn.ReadFromUDP(this.buf)
@@ -42,23 +58,20 @@ func (this *UdpMessageConn) Receive() (conn.Message, error) {
 	msg.Unmarshal(this.buf)
 
 }
-func (this *UdpMessageConn) Send(msg conn.Message) (err error) {
-	buf, err := msg.Marshal()
-	if err != nil {
-		return
-	}
 
+func (this *UdpMessageConn) Write(b []byte) (int, error) {
 	if this.remoteAddr == nil {
-		this.udpConn.Write(buf)
+		this.udpConn.Write(b)
 	} else {
-		this.udpConn.WriteToUDP(buf, this.remoteAddr)
+		this.udpConn.WriteToUDP(b, this.remoteAddr)
 	}
 
 }
+
 func (this *UdpMessageConn) Close() error {
 	this.udpConn.Close()
-
 }
+
 func (this *UdpMessageConn) LocalAddr() net.Addr {
 	return this.udpConn.LocalAddr()
 
@@ -68,4 +81,6 @@ func (this *UdpMessageConn) RemoteAddr() net.Addr {
 	if addr1 == "" {
 		return this.remoteAddr
 	}
+
+	return addr1
 }
