@@ -91,7 +91,7 @@ type StreamCreationContext interface {
 
 type StreamContext interface {
 	Context
-	NewPipe(base StreamIO) StreamIO
+	Pipe(base StreamIO) StreamIO
 }
 
 type MessageCreationContext interface {
@@ -102,12 +102,12 @@ type MessageCreationContext interface {
 
 type MessageTransitionContext interface {
 	Context
-	NewPipe(base StreamIO) MessageIO
+	Pipe(base StreamIO) MessageIO
 }
 
 type MessageContext interface {
 	Context
-	NewPipe(base MessageIO) MessageIO
+	PipeMessage(base Message) Message
 }
 
 type  StreamListener interface {
@@ -127,24 +127,14 @@ type  MessageListener interface {
 }
 
 type MessageIO interface {
-	io.ReadWriteCloser
-
-	/*Read() (Message, error)
+	Read(Message) error
 	Write(Message) error
-	// Close closes the connection.
-	// Any blocked Read or Write operations will be unblocked and return errors.
-	Close() error
-
-	// LocalAddr returns the local network address.
-	LocalAddr() net.Addr
-
-	// RemoteAddr returns the remote network address.
-	RemoteAddr() net.Addr*/
+	io.Closer
 }
 
 type Message interface {
-	proto.Marshaler
-	proto.Unmarshaler
+	Marshal() ([]byte, error)
+	Unmarshal([]byte) (n int, error)
 }
 
 type Dialer interface {

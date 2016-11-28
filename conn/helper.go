@@ -25,7 +25,7 @@ func wrapStream(contexts []StreamContext, origin StreamIO) (final StreamIO) {
 		if _, ok := ctx.(StreamContext); !ok {
 			break
 		}
-		final = ctx.(StreamContext).NewPipe(final)
+		final = ctx.(StreamContext).Pipe(final)
 	}
 	return
 }
@@ -45,32 +45,8 @@ func (l *stackStreamListener) Accept() (StreamIO, error) {
 	}
 }
 
-func wrapMessage(contexts []MessageContext, origin MessageIO) (final MessageIO) {
 
-	final = origin
-	for _, ctx := range contexts[:] {
 
-		if _, ok := ctx.(MessageContext); !ok {
-			break
-		}
-		final = ctx.(MessageContext).NewPipe(final)
-	}
-	return
-}
-
-type stackMessageListener struct {
-	MessageListener
-	Contexts []MessageContext
-}
-
-func (l *stackMessageListener) Accept() (MessageIO, error) {
-	c, err := l.MessageListener.Accept()
-	if err != nil {
-		return nil, err
-	} else {
-		return wrapMessage(l.Contexts, c), nil
-	}
-}
 
 type transMessageListener struct {
 	StreamListener
@@ -82,6 +58,50 @@ func (l *transMessageListener) Accept() (MessageIO, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		return l.Context.NewPipe(c), nil
+		return l.Context.Pipe(c), nil
 	}
+}
+
+
+type stackMessageListener struct {
+	MessageListener
+	Contexts []MessageContext
+}
+
+func (l *stackMessageListener) Accept() (MessageIO, error) {
+	c, err := l.MessageListener.Accept()
+	if err != nil {
+		return nil, err
+	} else {
+
+		newC := stackMessageIO{Base:c, Contexts:l.Contexts}
+		return newC, nil
+	}
+}
+
+type stackMessageIO struct {
+	Base     MessageIO
+	Contexts []MessageContext
+}
+
+func (this *stackMessageIO) Read(msg Message) error {
+	lastMsg := msg
+	for _, ctx := range this.Contexts {
+		lastMsg = ctx.PipeMessage(lastMsg)
+	}
+
+	return this.Base.Read(lastMsg)
+}
+
+func (this *stackMessageIO) Write(msg Message) error {
+	lastMsg := msg
+	for _, ctx := range this.Contexts {
+		lastMsg = ctx.PipeMessage(lastMsg)
+	}
+
+	return this.Base.Write(lastMsg)
+}
+
+func (this *stackMessageIO) Close() error {
+	this.Base.Close()
 }

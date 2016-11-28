@@ -17,9 +17,7 @@
 
 package conn
 
-type MyServer struct {
-
-}
+type MyServer struct {}
 
 func (server *MyServer) NewListener(contexts []Context) (l MessageListener, err error) {
 	if len(contexts) < 1 {
@@ -103,8 +101,6 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 	}
 
 	ml = stackMessageListener{Contexts:contexts[1:i]}
-
-
 	return
 }
 

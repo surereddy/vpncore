@@ -1,44 +1,40 @@
 package protobuf
 
 import (
-	"math"
 	"reflect"
 	"github.com/FTwOoO/vpncore/conn"
+	"fmt"
 )
 
 type ProtobufMessageContext struct {
-	msgTypes []reflect.Type
+	ValueToMsgType map[uint16]reflect.Type
+	MsgTypeToValue map[reflect.Type]uint16
 }
 
-func NewProtobufMessageContext(msgTypes []reflect.Type) *ProtobufMessageContext {
-	return &ProtobufMessageContext{msgTypes:msgTypes}
-}
-
-func (self *ProtobufMessageContext) NewPipe(base conn.MessageIO) conn.MessageIO {
-
-	codec := &protobufCodec{
-		rw: base,
-		headBuf: make([]byte, new(protobufPacketHeader).HeaderSize()),
-		maxRecv : math.MaxUint16,
-		maxSend : math.MaxUint16,
-		valueToMsgType : map[uint16]reflect.Type{},
-		msgTypeToValue : map[reflect.Type]uint16{},
+func NewProtobufMessageContext(msgTypes []reflect.Type) (*ProtobufMessageContext, error) {
+	self := &ProtobufMessageContext{
+		ValueToMsgType:map[uint16]reflect.Type{},
+		MsgTypeToValue: map[reflect.Type]uint16{},
 	}
-
-	for i, t := range self.msgTypes {
+	for i, t := range msgTypes {
 		if t.Kind() != reflect.Ptr {
 			// protobuf's Message type must be pointer
-			return nil
+			return nil, fmt.Errorf("Error type that is not pointer %v", t)
 		}
-		codec.valueToMsgType[uint16(i)] = t
-
-		codec.msgTypeToValue[t] = uint16(i)
+		self.ValueToMsgType[uint16(i)] = t
+		self.MsgTypeToValue[t] = uint16(i)
 	}
 
-	return codec, nil
+	return self, nil
+}
+
+func (self *ProtobufMessageContext) PipeMessage(base conn.Message) conn.Message {
+
+	newMsg := &protobufMsg{base:base, ctx:self}
+	return newMsg, nil
 }
 
 func (self *ProtobufMessageContext) Valid() (bool, error) {
-	return len(self.msgTypes) > 0
+	return len(self.ValueToMsgType) > 0 && len(self.ValueToMsgType) == len(self.MsgTypeToValue)
 }
 

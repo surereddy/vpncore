@@ -17,9 +17,7 @@
 
 package conn
 
-type MyClient struct {
-
-}
+type MyClient struct {}
 
 func (client *MyClient) Dial(contexts []Context) (m MessageIO, err error) {
 	if len(contexts) < 1 {
@@ -52,7 +50,7 @@ func (client *MyClient) Dial(contexts []Context) (m MessageIO, err error) {
 				break
 			}
 
-			c = ctx.(StreamContext).NewPipe(c)
+			c = ctx.(StreamContext).Pipe(c)
 
 		}
 
@@ -77,7 +75,7 @@ func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (mc Mess
 			return nil, ErrInvalidCtx
 		}
 
-		mc = ctx.(MessageTransitionContext).NewPipe(c)
+		mc = ctx.(MessageTransitionContext).Pipe(c)
 	} else {
 		ctx := contexts[0]
 		ctx, ok := ctx.(MessageCreationContext)
@@ -93,18 +91,16 @@ func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (mc Mess
 
 	var i int
 	for i, ctx = range contexts[1:] {
-
 		if _, ok := ctx.(MessageContext); !ok {
 			break
 		}
-
-		mc = ctx.(MessageContext).NewPipe(mc)
 	}
 
 	if i + 1 != len(contexts) {
 		return nil, ErrInvalidCtx
 	}
 
+	mc = stackMessageIO{Base:mc, Contexts:contexts[1:]}
 	return
 }
 

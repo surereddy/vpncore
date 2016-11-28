@@ -27,10 +27,10 @@ import (
 type UdpMessageListener struct {
 	c               *net.UDPConn
 	closed          chan struct{}
-	connections     map[string]*udpMessageConn
+	connections     map[string]*udpMessageIO
 	connectionsLock sync.Mutex
 
-	newConnections  chan *udpMessageConn
+	newConnections  chan *udpMessageIO
 
 	buf             []byte
 }
@@ -43,9 +43,9 @@ func NewUdpMessageListener(udpAddr *net.UDPAddr, buf []byte) (l *UdpMessageListe
 
 	l = &UdpMessageListener{c:c,
 		closed:new(chan struct{}),
-		connections:map[string]*udpMessageConn{},
+		connections:map[string]*udpMessageIO{},
 		connectionsLock:sync.Mutex{},
-		newConnections: make(chan *udpMessageConn, ConnectionsChanSize),
+		newConnections: make(chan *udpMessageIO, ConnectionsChanSize),
 	}
 	if buf == nil {
 		l.buf = make([]byte, MaxUDPPacketSize)
@@ -81,7 +81,7 @@ func (this *UdpMessageListener) expire() {
 	}
 }
 
-func (this *UdpMessageListener) writeLoop(c *udpMessageConn) {
+func (this *UdpMessageListener) writeLoop(c *udpMessageIO) {
 
 	for {
 		select {

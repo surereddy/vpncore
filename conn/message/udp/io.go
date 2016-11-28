@@ -20,9 +20,10 @@ package udp
 import (
 	"net"
 	"time"
+	"github.com/FTwOoO/vpncore/conn"
 )
 
-type udpMessageConn struct {
+type udpMessageIO struct {
 	localAddr  *net.UDPAddr
 	remoteAddr *net.UDPAddr
 	ReadChan   chan []byte
@@ -31,9 +32,9 @@ type udpMessageConn struct {
 	Closed     chan struct{}
 }
 
-func NewUdpMessageConn(localAddr *net.UDPAddr, remoteAddr *net.UDPAddr, readChan <- chan []byte, writeChan<- chan []byte) (*udpMessageConn, error) {
+func NewUdpMessageConn(localAddr *net.UDPAddr, remoteAddr *net.UDPAddr, readChan <- chan []byte, writeChan<- chan []byte) (*udpMessageIO, error) {
 
-	c := new(udpMessageConn)
+	c := new(udpMessageIO)
 	c.remoteAddr = remoteAddr
 	c.localAddr = localAddr
 	c.ReadChan = readChan
@@ -42,26 +43,31 @@ func NewUdpMessageConn(localAddr *net.UDPAddr, remoteAddr *net.UDPAddr, readChan
 	return c, nil
 }
 
-func (this *udpMessageConn) Read(b []byte) (n int, err error) {
+
+func (this *udpMessageIO) Read(msg conn.Message) error {
 	buf := <-this.ReadChan
-	n = copy(b, buf)
-	return
+	_, err := msg.Unmarshal(buf)
+	return err
 
 }
 
-func (this *udpMessageConn) Write(b []byte) (int, error) {
+func (this *udpMessageIO) Write(msg conn.Message) (err error){
+	b, err := msg.Marshal()
+	if err != nil {
+		return err
+	}
 	this.WriteChan <- b
 	return len(b), nil
 }
 
-func (this *udpMessageConn) Close() error {
+func (this *udpMessageIO) Close() error {
 	close(this.Closed)
 }
 
-func (this *udpMessageConn) LocalAddr() net.Addr {
+func (this *udpMessageIO) LocalAddr() net.Addr {
 	return this.localAddr
 
 }
-func (this *udpMessageConn) RemoteAddr() net.Addr {
+func (this *udpMessageIO) RemoteAddr() net.Addr {
 	return this.remoteAddr
 }
