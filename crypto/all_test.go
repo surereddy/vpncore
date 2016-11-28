@@ -47,64 +47,8 @@ func EnryptionOne(t *testing.T, encrytion Cipher, testKey string, testDataLen in
 	}
 }
 
-func EnryptionStreaming(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
-
-	bc1, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
-	bc2, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
-
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	len1 := mrand.Intn(testDataLen) + testDataLen
-	len2 := mrand.Intn(testDataLen) + testDataLen
-	len3 := mrand.Intn(testDataLen) + testDataLen
-	fmt.Printf("Test %s for EnryptionStreaming with data length %d-%d-%d\n", encrytion, len1, len2, len3)
-
-	data1 := make([]byte, len1)
-	data2 := make([]byte, len2)
-	data3 := make([]byte, len3)
-
-	io.ReadFull(crand.Reader, data1)
-	io.ReadFull(crand.Reader, data2)
-	io.ReadFull(crand.Reader, data3)
-
-	alldata := make([]byte, len1 + len2 + len3)
-	copy(alldata[:len1], data1)
-	copy(alldata[len1:len1 + len2], data2)
-	copy(alldata[len1 + len2:], data3)
-
-	dec := make([]byte, len(alldata))
-	dec2 := make([]byte, len(alldata))
-	enc := make([]byte, len(alldata))
-	enc2 := make([]byte, len(alldata))
-
-	bc1.Encrypt(enc[:len1], data1)
-	bc1.Encrypt(enc[len1:len1 + len2], data2)
-	bc1.Encrypt(enc[len1 + len2:], data3)
-	bc2.Encrypt(enc2, alldata)
-
-	if !bytes.Equal(enc2, enc) {
-		t.Fatalf("Not streaming consistent encryption for %s!", encrytion)
-	}
-
-	bc2.Decrypt(dec2[:len1], enc2[:len1])
-	bc2.Decrypt(dec2[len1:len1 + len2], enc2[len1:len1 + len2])
-	bc2.Decrypt(dec2[len1 + len2:], enc2[len1 + len2:])
-	bc1.Decrypt(dec, enc)
-
-	if !bytes.Equal(dec2, dec) {
-		t.Fatal("Error decryption 1!")
-	}
-
-	if !bytes.Equal(alldata, dec2) {
-		t.Fatal("Error decryption 2!")
-	}
-}
-
-
-func EnryptionIO(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
-	stream, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
+func EnryptionStreamingIO(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
+	cf, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
 		if err != nil {
 		t.Fatal(err)
 	}
@@ -129,21 +73,33 @@ func EnryptionIO(t *testing.T, encrytion Cipher, testKey string, testDataLen int
 	result1 := make([]byte, len(alldata))
 	result2 := make([]byte, len(alldata))
 
-	buf:= bytes.NewBuffer([]byte{}) // A Buffer needs no initialization.
-	r1 := NewCryptionReadWriter(buf, stream)
+	buf1 := bytes.NewBuffer([]byte{}) // A Buffer needs no initialization.
+	r1 := NewCryptionReadWriter(buf1, cf)
 	r1.Write(data1)
 	r1.Write(data2)
 	r1.Write(data3)
-	n, err := r1.Read(result1)
+	//n, err := r1.Read(result1)
+	buf1.Read(result1)
 
-	if !bytes.Equal(result1[:n], alldata) {
+	buf2 := bytes.NewBuffer([]byte{}) // A Buffer needs no initialization.
+	r2 := NewCryptionReadWriter(buf2, cf)
+	r2.Write(alldata)
+	//n, err := r1.Read(result1)
+	buf2.Read(result2)
+
+	if !bytes.Equal(result1, result2) || bytes.Equal(result1, alldata){
 		t.Fatal("Error encryption 1!")
 	}
 
 	r1.Write(alldata)
+	r2.Write(data1)
+	r2.Write(data2)
+	r2.Write(data3)
+
+	r1.Read(result1)
 	r1.Read(result2)
 
-	if !bytes.Equal(result2, alldata) {
+	if !bytes.Equal(result1, result2) || !bytes.Equal(result1, alldata) {
 		t.Fatal("Error encryption 2!")
 	}
 
@@ -161,8 +117,7 @@ func TestAll(t *testing.T) {
 			EnryptionOne(t, cf, password, testDatalen)
 
 			if cf != SALSA20 {
-				EnryptionStreaming(t, cf, password, testDatalen)
-				EnryptionIO(t, cf, password, testDatalen)
+				EnryptionStreamingIO(t, cf, password, testDatalen)
 			}
 		}
 	}

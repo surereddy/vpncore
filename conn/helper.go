@@ -45,9 +45,6 @@ func (l *stackStreamListener) Accept() (StreamIO, error) {
 	}
 }
 
-
-
-
 type transMessageListener struct {
 	StreamListener
 	Context MessageTransitionContext
@@ -61,7 +58,6 @@ func (l *transMessageListener) Accept() (MessageIO, error) {
 		return l.Context.Pipe(c), nil
 	}
 }
-
 
 type stackMessageListener struct {
 	MessageListener
