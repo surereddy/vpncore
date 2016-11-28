@@ -17,57 +17,50 @@
 
 package udp
 
-
 import (
 	"net"
 	"github.com/FTwOoO/vpncore/conn"
+	"time"
+)
+
+const (
+	MaxUDPPacketSize = 0x10000 - 1
+	Lifetime = time.Duration(time.Second * 300)
+	ConnectionsChanSize = 1024
+	MessageChanSizePerConn = 1024
 )
 
 type UdpMessageContext struct {
 	udpAddr *net.UDPAddr
 }
 
-func NewUdpMessageContext(uaddr string)  (*UdpMessageContext, error) {
-	// Resolve UDP address
-	uaddr2, err := net.ResolveUDPAddr("udp", uaddr)
+func NewUdpMessageContext(addr string) (*UdpMessageContext, error) {
+	uaddr, err := net.ResolveUDPAddr("udp", addr)
 	if err != nil {
 		return nil, err
 	}
 
-
-	// Start server
 	s := &UdpMessageContext{
-		udpAddr: uaddr2,
+		udpAddr: uaddr,
 	}
 	return s, nil
 }
 
-
-func (self *UdpMessageContext) Valid() (bool, error) {
+func (this *UdpMessageContext) Valid() (bool, error) {
 	return true, nil
 }
 
-func (self *UdpMessageContext) 	Layer() conn.Layer {
+func (this *UdpMessageContext) Layer() conn.Layer {
 	return conn.TRANSPORT_LAYER
 }
 
-
-func (self *UdpMessageContext) Dial() (conn.MessagegReadWriteCloser, error) {
+func (this *UdpMessageContext) Dial() (conn.MessagegReadWriteCloser, error) {
 	srcAddr := &net.UDPAddr{IP: []byte{0, 0, 0, 0}, Port: 0}
+	return net.DialUDP("udp", srcAddr, this.udpAddr)
 
-	c, err := net.DialUDP("udp", srcAddr, self.udpAddr)
-	if err != nil {
-		return nil, err
-	}
-
-	return NewUdpMessageConn(c, nil, nil), nil
 }
 
-func (self *UdpMessageContext) Listener() (conn.MessageListener, error) {
-	// Bind and setup UDP connection
-	conn, err := net.ListenUDP("udp", uaddr2)
-	if err != nil {
-		return nil, err
-	}
+func (this *UdpMessageContext) Listener() (conn.MessageListener, error) {
+	return NewUdpMessageListener(this.udpAddr, nil)
 }
 

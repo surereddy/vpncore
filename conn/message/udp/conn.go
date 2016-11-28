@@ -18,69 +18,50 @@
 package udp
 
 import (
-	"github.com/FTwOoO/vpncore/conn"
 	"net"
+	"time"
 )
 
-type UdpMessageConn struct {
-	udpConn    *net.UDPConn
+type udpMessageConn struct {
+	localAddr  *net.UDPAddr
 	remoteAddr *net.UDPAddr
-	buf        []byte
+	ReadChan   chan []byte
+	WriteChan  chan []byte
+	LastSeen   time.Time
+	Closed     chan struct{}
 }
 
-func NewUdpMessageConn(udpConn *net.UDPConn, remoteAddr *net.UDPAddr, buf []byte) (*UdpMessageConn, error) {
+func NewUdpMessageConn(localAddr *net.UDPAddr, remoteAddr *net.UDPAddr, readChan <- chan []byte, writeChan<- chan []byte) (*udpMessageConn, error) {
 
-	o := new(UdpMessageConn)
-	o.udpConn = udpConn
-	o.remoteAddr = remoteAddr
-
-	if buf == nil {
-		o.buf = make([]byte, 0x100000)
-	} else {
-		o.buf = buf
-	}
-
-	return o, nil
+	c := new(udpMessageConn)
+	c.remoteAddr = remoteAddr
+	c.localAddr = localAddr
+	c.ReadChan = readChan
+	c.WriteChan = writeChan
+	c.Closed = make(chan struct{})
+	return c, nil
 }
 
-
-func (this *UdpMessageConn) Read(b []byte) (int, error)  {
-
-	this.buf = this.buf[:cap(this.buf)]
-	n, _, err := this.udpConn.ReadFromUDP(this.buf)
-	if err != nil {
-		return nil, err
-	}
-
-	this.buf = this.buf[:n]
-
-	msg := conn.Message{}
-	msg.Unmarshal(this.buf)
+func (this *udpMessageConn) Read(b []byte) (n int, err error) {
+	buf := <-this.ReadChan
+	n = copy(b, buf)
+	return
 
 }
 
-func (this *UdpMessageConn) Write(b []byte) (int, error) {
-	if this.remoteAddr == nil {
-		this.udpConn.Write(b)
-	} else {
-		this.udpConn.WriteToUDP(b, this.remoteAddr)
-	}
-
+func (this *udpMessageConn) Write(b []byte) (int, error) {
+	this.WriteChan <- b
+	return len(b), nil
 }
 
-func (this *UdpMessageConn) Close() error {
-	this.udpConn.Close()
+func (this *udpMessageConn) Close() error {
+	close(this.Closed)
 }
 
-func (this *UdpMessageConn) LocalAddr() net.Addr {
-	return this.udpConn.LocalAddr()
+func (this *udpMessageConn) LocalAddr() net.Addr {
+	return this.localAddr
 
 }
-func (this *UdpMessageConn) RemoteAddr() net.Addr {
-	addr1 := this.udpConn.RemoteAddr()
-	if addr1 == "" {
-		return this.remoteAddr
-	}
-
-	return addr1
+func (this *udpMessageConn) RemoteAddr() net.Addr {
+	return this.remoteAddr
 }
