@@ -54,8 +54,9 @@ func (this *UdpMessageContext) Layer() conn.Layer {
 	return conn.TRANSPORT_LAYER
 }
 
-func (this *UdpMessageContext) Dial() (conn.MessagegReadWriteCloser, error) {
+func (this *UdpMessageContext) Dial() (conn.MessageIO, error) {
 	srcAddr := &net.UDPAddr{IP: []byte{0, 0, 0, 0}, Port: 0}
+	//要验证一次read()不管读多少个字节都消掉一个UDP packet
 	return net.DialUDP("udp", srcAddr, this.udpAddr)
 
 }

@@ -75,7 +75,7 @@ type Client interface {
 	//valid contexts pattern:
 	//	StreamCreationContext -> StreamContext* -> MessageTransitionContext -> MessageContext*
 	//	MessageCreationContext -> MessageContext*
-	Dial(contexts []Context) (MessagegReadWriteCloser, error)
+	Dial(contexts []Context) (MessageIO, error)
 }
 
 type Context interface {
@@ -85,40 +85,48 @@ type Context interface {
 
 type StreamCreationContext interface {
 	Context
-	Dial() (StreamReadWriteCloser, error)
+	Dial() (StreamIO, error)
 	Listen() (StreamListener, error)
 }
 
 type StreamContext interface {
 	Context
-	NewPipe(base StreamReadWriteCloser) StreamReadWriteCloser
+	NewPipe(base StreamIO) StreamIO
 }
 
 type MessageCreationContext interface {
 	Context
-	Dial() (MessagegReadWriteCloser, error)
+	Dial() (MessageIO, error)
 	Listen() (MessageListener, error)
 }
 
 type MessageTransitionContext interface {
 	Context
-	NewPipe(StreamReadWriteCloser) MessagegReadWriteCloser
+	NewPipe(base StreamIO) MessageIO
 }
 
 type MessageContext interface {
 	Context
-	NewPipe(base MessagegReadWriteCloser) MessagegReadWriteCloser
+	NewPipe(base MessageIO) MessageIO
 }
 
 type  StreamListener interface {
-	net.Listener
+	Accept() (StreamIO, error)
+	Close() error
+	Addr() net.Addr
 }
 
-type  StreamReadWriteCloser interface {
+type  StreamIO interface {
 	io.ReadWriteCloser
 }
 
-type MessagegReadWriteCloser interface {
+type  MessageListener interface {
+	Accept() (MessageIO, error)
+	Close() error
+	Addr() net.Addr
+}
+
+type MessageIO interface {
 	io.ReadWriteCloser
 
 	/*Read() (Message, error)
@@ -132,18 +140,6 @@ type MessagegReadWriteCloser interface {
 
 	// RemoteAddr returns the remote network address.
 	RemoteAddr() net.Addr*/
-}
-
-type  MessageListener interface {
-	// Accept waits for and returns the next connection to the listener.
-	Accept() (MessagegReadWriteCloser, error)
-
-	// Close closes the listener.
-	// Any blocked Accept operations will be unblocked and return errors.
-	Close() error
-
-	// Addr returns the listener's network address.
-	Addr() net.Addr
 }
 
 type Message interface {

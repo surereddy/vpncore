@@ -135,7 +135,7 @@ func (this *UdpMessageListener) listenLoop() {
 	}
 }
 
-func (this *UdpMessageListener) Accept() (conn.MessagegReadWriteCloser, error) {
+func (this *UdpMessageListener) Accept() (conn.MessageIO, error) {
 	c := <-this.newConnections
 	return c, nil
 }

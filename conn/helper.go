@@ -17,7 +17,7 @@
 
 package conn
 
-func wrapStream(contexts []StreamContext, origin StreamReadWriteCloser) (final StreamReadWriteCloser) {
+func wrapStream(contexts []StreamContext, origin StreamIO) (final StreamIO) {
 
 	final = origin
 	for _, ctx := range contexts[:] {
@@ -35,17 +35,17 @@ type stackStreamListener struct {
 	Contexts []StreamContext
 }
 
-func (l *stackStreamListener) Accept() (StreamReadWriteCloser, error) {
-	conn, err := l.StreamListener.Accept()
+func (l *stackStreamListener) Accept() (StreamIO, error) {
+	c, err := l.StreamListener.Accept()
 	if err != nil {
 		return nil, err
 	} else {
 
-		return wrapStream(l.Contexts, conn), nil
+		return wrapStream(l.Contexts, c), nil
 	}
 }
 
-func wrapMessage(contexts []MessageContext, origin MessagegReadWriteCloser) (final MessagegReadWriteCloser) {
+func wrapMessage(contexts []MessageContext, origin MessageIO) (final MessageIO) {
 
 	final = origin
 	for _, ctx := range contexts[:] {
@@ -63,12 +63,12 @@ type stackMessageListener struct {
 	Contexts []MessageContext
 }
 
-func (l *stackMessageListener) Accept() (MessagegReadWriteCloser, error) {
-	conn, err := l.MessageListener.Accept()
+func (l *stackMessageListener) Accept() (MessageIO, error) {
+	c, err := l.MessageListener.Accept()
 	if err != nil {
 		return nil, err
 	} else {
-		return wrapMessage(l.Contexts, conn), nil
+		return wrapMessage(l.Contexts, c), nil
 	}
 }
 
@@ -77,11 +77,11 @@ type transMessageListener struct {
 	Context MessageTransitionContext
 }
 
-func (l *transMessageListener) Accept() (MessagegReadWriteCloser, error) {
-	conn, err := l.StreamListener.Accept()
+func (l *transMessageListener) Accept() (MessageIO, error) {
+	c, err := l.StreamListener.Accept()
 	if err != nil {
 		return nil, err
 	} else {
-		return l.Context.NewPipe(conn), nil
+		return l.Context.NewPipe(c), nil
 	}
 }

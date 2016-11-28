@@ -14,7 +14,7 @@ func NewProtobufMessageContext(msgTypes []reflect.Type) *ProtobufMessageContext 
 	return &ProtobufMessageContext{msgTypes:msgTypes}
 }
 
-func (self *ProtobufMessageContext) NewPipe(base conn.MessagegReadWriteCloser) conn.MessagegReadWriteCloser {
+func (self *ProtobufMessageContext) NewPipe(base conn.MessageIO) conn.MessageIO {
 
 	codec := &protobufCodec{
 		rw: base,

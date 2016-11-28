@@ -29,7 +29,7 @@ type TransportStreamContext struct {
 	RemoveAddr string
 }
 
-func (this *TransportStreamContext) Dial() (conn.StreamReadWriteCloser, error){
+func (this *TransportStreamContext) Dial() (conn.StreamIO, error){
 
 	switch this.Protocol {
 	case conn.PROTO_TCP:

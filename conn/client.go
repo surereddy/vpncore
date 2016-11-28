@@ -21,7 +21,7 @@ type MyClient struct {
 
 }
 
-func (client *MyClient) Dial(contexts []Context) (m MessagegReadWriteCloser, err error) {
+func (client *MyClient) Dial(contexts []Context) (m MessageIO, err error) {
 	if len(contexts) < 1 {
 		return nil, ErrInvalidArgs
 	}
@@ -37,7 +37,7 @@ func (client *MyClient) Dial(contexts []Context) (m MessagegReadWriteCloser, err
 		return nil, ErrInvalidCtx
 	}
 
-	var c StreamReadWriteCloser
+	var c StreamIO
 	ctx, ok := ctx.(StreamCreationContext)
 	if ok {
 		c, err = ctx.(StreamCreationContext).Dial()
@@ -64,7 +64,7 @@ func (client *MyClient) Dial(contexts []Context) (m MessagegReadWriteCloser, err
 
 }
 
-func (client *MyClient) dialMessageConn(c StreamReadWriteCloser, contexts []Context) (mc MessagegReadWriteCloser, err error) {
+func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (mc MessageIO, err error) {
 	if len(contexts) < 1 {
 		return nil, ErrInvalidArgs
 	}
