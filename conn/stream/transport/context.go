@@ -38,7 +38,7 @@ func (this *TransportStreamContext) Dial() (conn.StreamIO, error){
 			return nil, err
 		}
 
-		return &transportConn{Conn:c, proto:this.Protocol}, nil
+		return &transportIO{Conn:c, proto:this.Protocol}, nil
 
 
 	case conn.PROTO_KCP:

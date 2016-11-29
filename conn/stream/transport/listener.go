@@ -32,6 +32,6 @@ func (l *transportListener) Accept() (net.Conn, error) {
 	if err != nil {
 		return nil, err
 	} else {
-		return &transportConn{Conn:c, proto:l.proto}, nil
+		return &transportIO{Conn:c, proto:l.proto}, nil
 	}
 }

@@ -20,7 +20,7 @@ import (
 	"net"
 	"github.com/FTwOoO/vpncore/conn"
 )
-type transportConn struct {
+type transportIO struct {
 	net.Conn
 	proto conn.TransportProtocol
 }
