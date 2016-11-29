@@ -22,13 +22,14 @@ import (
 	"net"
 	"strings"
 	"fmt"
-	"github.com/golang/protobuf/proto"
 	"io"
 )
 
 var (
 	ErrInvalidArgs = errors.New("Invalid arguments.")
 	ErrInvalidCtx = errors.New("Invalid context")
+	ErrIOClosed = errors.New("IO closed")
+	ErrDecode = errors.New("Decode error")
 )
 
 type Layer int
@@ -39,6 +40,9 @@ const (
 	CRYPTO_LAYER = Layer(3)
 	AUTH_LAYER = Layer(4)
 	APPCATIOIN_LAYER = Layer(5)
+
+	FRAGMENT_LAYER = 7
+
 )
 
 type TransportProtocol string
