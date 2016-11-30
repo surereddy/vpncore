@@ -30,6 +30,7 @@ var (
 	ErrInvalidCtx = errors.New("Invalid context")
 	ErrIOClosed = errors.New("IO closed")
 	ErrDecode = errors.New("Decode error")
+	ErrInValidHandshakeStep = errors.New("Invalid handshake step")
 )
 
 type Layer int

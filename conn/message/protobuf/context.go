@@ -38,3 +38,9 @@ func (self *ProtobufMessageContext) Valid() (bool, error) {
 	return len(self.ValueToMsgType) > 0 && len(self.ValueToMsgType) == len(self.MsgTypeToValue)
 }
 
+
+func (this *ProtobufMessageContext) Layer() conn.Layer {
+	return conn.APPCATIOIN_LAYER
+}
+
+

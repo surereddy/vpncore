@@ -24,8 +24,8 @@ import (
 )
 
 type FragmentIO struct {
-	base conn.StreamIO
-	buf []byte
+	base    conn.StreamIO
+	buf     []byte
 
 	closedM bool
 	closedC chan struct{}
@@ -41,9 +41,6 @@ func NewFragmentIO(base conn.StreamIO) (*FragmentIO, error) {
 
 	return f, nil
 }
-
-
-func (this *FragmentIO) readLoop() {}
 
 func (this *FragmentIO) Read(msg conn.Message) error {
 	var length uint16
