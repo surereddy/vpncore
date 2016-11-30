@@ -4,6 +4,7 @@ import (
 	"reflect"
 	"github.com/FTwOoO/vpncore/conn"
 	"fmt"
+	"github.com/golang/protobuf/proto"
 )
 
 type ProtobufMessageContext struct {
@@ -28,12 +29,6 @@ func NewProtobufMessageContext(msgTypes []reflect.Type) (*ProtobufMessageContext
 	return self, nil
 }
 
-func (self *ProtobufMessageContext) PipeMessage(base conn.Message) conn.Message {
-
-	newMsg := &protobufMsg{base:base, ctx:self}
-	return newMsg, nil
-}
-
 func (self *ProtobufMessageContext) Valid() (bool, error) {
 	return len(self.ValueToMsgType) > 0 && len(self.ValueToMsgType) == len(self.MsgTypeToValue)
 }
@@ -43,4 +38,25 @@ func (this *ProtobufMessageContext) Layer() conn.Layer {
 	return conn.APPCATIOIN_LAYER
 }
 
+
+func (this *ProtobufMessageContext) Encode(obj interface{}) ([]byte, error) {
+
+	if _, ok := obj.(proto.Message); !ok {
+		return nil, conn.ErrUnsupportType
+	}
+
+	msg := protobufMsg{Content:obj.(proto.Message), ctx:this}
+	return msg.Marshal()
+}
+
+func (this *ProtobufMessageContext) Decode(packet []byte) (interface{}, error) {
+	msg := protobufMsg{Content:nil, ctx:this}
+	_, err := msg.Unmarshal(packet)
+
+	if err != nil {
+		return nil, err
+	}
+
+	return msg.Content, nil
+}
 

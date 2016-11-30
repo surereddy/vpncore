@@ -19,7 +19,7 @@ package conn
 
 type MyServer struct {}
 
-func (server *MyServer) NewListener(contexts []Context) (l MessageListener, err error) {
+func (server *MyServer) NewListener(contexts []Context) (l ObjectListener, err error) {
 	if len(contexts) < 1 {
 		return nil, ErrInvalidArgs
 	}
@@ -59,20 +59,21 @@ func (server *MyServer) NewListener(contexts []Context) (l MessageListener, err 
 
 }
 
-func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context) (ml MessageListener, err error) {
-	if len(contexts) < 1 {
+func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context) (cl ObjectListener, err error) {
+	if len(contexts) < 2 {
 		return nil, ErrInvalidArgs
 	}
 
 	ctx := contexts[0]
+	var ml MessageListener
 
 	if sl != nil {
-		ctx, ok := ctx.(MessageTransitionContext)
+		ctx, ok := ctx.(StreamToMessageContext)
 		if !ok {
 			return nil, ErrInvalidCtx
 		}
 
-		ml = &transMessageListener{StreamListener:sl, Context:ctx}
+		ml = &transStreamToMessageListener{StreamListener:sl, Context:ctx}
 		if err != nil {
 			return
 		}
@@ -89,18 +90,31 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 		}
 	}
 
-	var i int
-	for i, ctx = range contexts[1:] {
-
+	var i int = -1
+	for i, ctx = range contexts[:] {
+		if i == 0 {
+			continue
+		}
 		if _, ok := ctx.(MessageContext); !ok {
 			break
 		}
 	}
-	if i + 1 != len(contexts) {
+
+
+	if i != len(contexts) - 1 {
 		return nil, ErrInvalidCtx
 	}
 
-	ml = stackMessageListener{Contexts:contexts[1:i]}
+	if i-1 > 0 {
+		ml = stackMessageListener{Contexts:contexts[1:i]}
+	}
+
+	ctx = contexts[i]
+	if _, ok := ctx.(MessageToObjectContext); !ok {
+		return nil, ErrInvalidCtx
+	}
+
+	cl = transMessageToObjectListener{Context:ctx, Base:ml}
 	return
 }
 

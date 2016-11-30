@@ -42,7 +42,7 @@ func NewFragmentIO(base conn.StreamIO) (*FragmentIO, error) {
 	return f, nil
 }
 
-func (this *FragmentIO) Read(msg conn.Message) error {
+func (this *FragmentIO) Read() (buf []byte, err error) {
 	var length uint16
 	var lengthBytes [2]byte
 	if _, err := io.ReadFull(this.base, lengthBytes); err != nil {
@@ -54,22 +54,12 @@ func (this *FragmentIO) Read(msg conn.Message) error {
 		return err
 	}
 
-	n, err := msg.Unmarshal(this.buf[:length])
-	if err != nil {
-		return err
-	}
-
-	if n != length {
-		return conn.ErrDecode
-	}
-	return nil
+	buf = make([]byte, length)
+	copy(buf, this.buf[:length])
+	return
 }
 
-func (this *FragmentIO) Write(msg conn.Message) error {
-	b, err := msg.Marshal()
-	if err != nil {
-		return err
-	}
+func (this *FragmentIO) Write(b []byte) error {
 
 	for {
 		if len(b) <= 0 {

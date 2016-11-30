@@ -31,6 +31,7 @@ var (
 	ErrIOClosed = errors.New("IO closed")
 	ErrDecode = errors.New("Decode error")
 	ErrInValidHandshakeStep = errors.New("Invalid handshake step")
+	ErrUnsupportType = errors.New("Unsupported type")
 )
 
 type Layer int
@@ -43,7 +44,6 @@ const (
 	APPCATIOIN_LAYER = Layer(5)
 
 	FRAGMENT_LAYER = 7
-
 )
 
 type TransportProtocol string
@@ -73,14 +73,14 @@ func (self *TransportProtocol) UnmarshalTOML(data []byte) (err error) {
 }
 
 type Server interface {
-	NewListener(contexts []Context) (MessageListener, error)
+	NewListener(contexts []Context) (ObjectListener, error)
 }
 
 type Client interface {
 	//valid contexts pattern:
 	//	StreamCreationContext -> StreamContext* -> MessageTransitionContext -> MessageContext*
 	//	MessageCreationContext -> MessageContext*
-	Dial(contexts []Context) (MessageIO, error)
+	Dial(contexts []Context) (ObjectIO, error)
 }
 
 type Context interface {
@@ -105,14 +105,21 @@ type MessageCreationContext interface {
 	Listen() (MessageListener, error)
 }
 
-type MessageTransitionContext interface {
+type StreamToMessageContext interface {
 	Context
 	Pipe(base StreamIO) MessageIO
 }
 
 type MessageContext interface {
 	Context
-	PipeMessage(base Message) Message
+	Encode([]byte) ([]byte)
+	Decode([]byte) ([]byte, error)
+}
+
+type MessageToObjectContext interface {
+	Context
+	Encode(interface{}) ([]byte, error)
+	Decode([]byte) (interface{}, error)
 }
 
 type  StreamListener interface {
@@ -132,12 +139,25 @@ type  MessageListener interface {
 }
 
 type MessageIO interface {
-	Read(Message) error
-	Write(Message) error
+	Read() ([]byte, error)
+	Write([]byte) error
 	io.Closer
 }
 
-type Message interface {
+
+type  ObjectListener interface {
+	Accept() (ObjectIO, error)
+	Close() error
+	Addr() net.Addr
+}
+
+type ObjectIO interface {
+	Read() (interface{}, error)
+	Write(interface{}) error
+	io.Closer
+}
+
+type Marshaler interface {
 	Marshal() ([]byte, error)
 	Unmarshal([]byte) (n int, error)
 }

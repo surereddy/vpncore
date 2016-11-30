@@ -45,17 +45,17 @@ func (l *stackStreamListener) Accept() (StreamIO, error) {
 	}
 }
 
-type transMessageListener struct {
-	StreamListener
-	Context MessageTransitionContext
+type transStreamToMessageListener struct {
+	Base    StreamListener
+	Context StreamToMessageContext
 }
 
-func (l *transMessageListener) Accept() (MessageIO, error) {
-	c, err := l.StreamListener.Accept()
+func (this *transStreamToMessageListener) Accept() (MessageIO, error) {
+	c, err := this.Base.Accept()
 	if err != nil {
 		return nil, err
 	} else {
-		return l.Context.Pipe(c), nil
+		return this.Context.Pipe(c), nil
 	}
 }
 
@@ -80,24 +80,83 @@ type stackMessageIO struct {
 	Contexts []MessageContext
 }
 
-func (this *stackMessageIO) Read(msg Message) error {
-	lastMsg := msg
-	for _, ctx := range this.Contexts {
-		lastMsg = ctx.PipeMessage(lastMsg)
+func (this *stackMessageIO) Read() (packet []byte, err error) {
+	packet, err = this.Base.Read()
+	if err != nil {
+		return
 	}
 
-	return this.Base.Read(lastMsg)
+	for _, ctx := range this.Contexts {
+		packet, err = ctx.Decode(packet)
+		if err != nil {
+			return
+		}
+	}
+
+	return
 }
 
-func (this *stackMessageIO) Write(msg Message) error {
-	lastMsg := msg
-	for _, ctx := range this.Contexts {
-		lastMsg = ctx.PipeMessage(lastMsg)
+func (this *stackMessageIO) Write(packet []byte) error {
+
+	i := len(this.Contexts) - 1
+	for {
+		if i < 0 {
+			break
+		}
+
+		ctx := this.Contexts[i]
+		packet = ctx.Encode(packet)
+		i -= 1
 	}
 
-	return this.Base.Write(lastMsg)
+	return this.Base.Write(packet)
 }
 
 func (this *stackMessageIO) Close() error {
-	this.Base.Close()
+	return this.Base.Close()
+}
+
+type transMessageToObjectIO struct {
+	Base    MessageIO
+	Context MessageToObjectContext
+}
+
+func (this *transMessageToObjectIO) Read() (interface{}, error) {
+	packet, err := this.Base.Read()
+	if err != nil {
+		return nil, err
+	}
+
+	return this.Context.Decode(packet)
+
+}
+
+func (this *transMessageToObjectIO) Write(obj interface{}) error {
+	packet, err := this.Context.Encode(obj)
+	if err != nil {
+		return err
+	}
+
+	return this.Base.Write(packet)
+
+}
+
+func (this *transMessageToObjectIO) Close() error {
+	return this.Base.Close()
+}
+
+type transMessageToObjectListener struct {
+	Base    MessageListener
+	Context MessageToObjectContext
+}
+
+func (this *transMessageToObjectListener) Accept() (ObjectIO, error) {
+	c, err := this.Base.Accept()
+	if err != nil {
+		return nil, err
+	} else {
+
+		oc := transMessageToObjectIO{Base:c, Context:this.Context}
+		return oc, nil
+	}
 }

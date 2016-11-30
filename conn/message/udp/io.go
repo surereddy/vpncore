@@ -44,18 +44,13 @@ func NewUdpMessageConn(localAddr *net.UDPAddr, remoteAddr *net.UDPAddr, readChan
 }
 
 
-func (this *udpMessageIO) Read(msg conn.Message) error {
-	buf := <-this.ReadChan
-	_, err := msg.Unmarshal(buf)
-	return err
+func (this *udpMessageIO) Read() (buf []byte, err error) {
+	buf = <-this.ReadChan
+	return
 
 }
 
-func (this *udpMessageIO) Write(msg conn.Message) (err error){
-	b, err := msg.Marshal()
-	if err != nil {
-		return err
-	}
+func (this *udpMessageIO) Write(b []byte) error {
 	this.WriteChan <- b
 	return len(b), nil
 }

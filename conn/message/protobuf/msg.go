@@ -59,19 +59,18 @@ func (d *protobufMsgHeader) ValidateContent(body []byte) error {
 }
 
 type protobufMsg struct {
-	base proto.Message
-	ctx *ProtobufMessageContext
+	Content proto.Message
+	ctx     *ProtobufMessageContext
 }
 
-func (d *protobufMsg) Unmarshal(buf []byte) (err error) {
+func (d *protobufMsg) Unmarshal(buf []byte) (n int, err error) {
 	header, err := d.decodeHeader(buf)
 	if err != nil {
 		return err
 	}
 
 	buf = buf[header.HeaderSize()]
-	size := header.ContentSize
-	if len(buf) < size {
+	if len(buf) < header.HeaderSize() {
 		return errors.New("Body content not enough!")
 	}
 
@@ -80,24 +79,25 @@ func (d *protobufMsg) Unmarshal(buf []byte) (err error) {
 		return
 	} else {
 
-		d.base = msg
+		d.Content = msg
+		n = header.HeaderSize() + header.HeaderSize()
 		return
 	}
 }
 
 func (d *protobufMsg) Marshal() (packet []byte, err error) {
-	body, err := proto.Marshal(d.base)
+	body, err := proto.Marshal(d.Content)
 	if err != nil {
 		return nil, err
 	}
 
 	h := new(protobufMsgHeader)
-	if _, ok := d.ctx.MsgTypeToValue[reflect.TypeOf(d.base)]; !ok {
-		fmt.Printf("No message type for this type %s", reflect.TypeOf(d.base))
-		return nil, fmt.Errorf("No message type for this type %s", reflect.TypeOf(d.base))
+	if _, ok := d.ctx.MsgTypeToValue[reflect.TypeOf(d.Content)]; !ok {
+		fmt.Printf("No message type for this type %s", reflect.TypeOf(d.Content))
+		return nil, fmt.Errorf("No message type for this type %s", reflect.TypeOf(d.Content))
 	}
 
-	h.MessageType = d.ctx.MsgTypeToValue[reflect.TypeOf(d.base)]
+	h.MessageType = d.ctx.MsgTypeToValue[reflect.TypeOf(d.Content)]
 	h.ContentSize = uint16(len(body))
 	h.Hash = 0
 

@@ -19,7 +19,7 @@ package conn
 
 type MyClient struct {}
 
-func (client *MyClient) Dial(contexts []Context) (m MessageIO, err error) {
+func (client *MyClient) Dial(contexts []Context) (m ObjectIO, err error) {
 	if len(contexts) < 1 {
 		return nil, ErrInvalidArgs
 	}
@@ -62,20 +62,21 @@ func (client *MyClient) Dial(contexts []Context) (m MessageIO, err error) {
 
 }
 
-func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (mc MessageIO, err error) {
-	if len(contexts) < 1 {
+func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (oc ObjectIO, err error) {
+	if len(contexts) < 2 {
 		return nil, ErrInvalidArgs
 	}
 
 	ctx := contexts[0]
+	var mc MessageIO
 
 	if c != nil {
-		ctx, ok := ctx.(MessageTransitionContext)
+		ctx, ok := ctx.(StreamToMessageContext)
 		if !ok {
 			return nil, ErrInvalidCtx
 		}
 
-		mc = ctx.(MessageTransitionContext).Pipe(c)
+		mc = ctx.(StreamToMessageContext).Pipe(c)
 	} else {
 		ctx := contexts[0]
 		ctx, ok := ctx.(MessageCreationContext)
@@ -89,18 +90,32 @@ func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (mc Mess
 		}
 	}
 
-	var i int
-	for i, ctx = range contexts[1:] {
+
+	var i int = -1
+	for i, ctx = range contexts[:] {
+		if i == 0 {
+			continue
+		}
 		if _, ok := ctx.(MessageContext); !ok {
 			break
 		}
 	}
 
-	if i + 1 != len(contexts) {
+	if i != len(contexts) - 1 {
 		return nil, ErrInvalidCtx
 	}
 
-	mc = stackMessageIO{Base:mc, Contexts:contexts[1:]}
+	if i-1 > 0 {
+		mc = stackMessageIO{Base:mc, Contexts:contexts[1:i]}
+	}
+
+
+	ctx = contexts[i]
+	if _, ok := ctx.(MessageToObjectContext); !ok {
+		return nil, ErrInvalidCtx
+	}
+
+	oc = transMessageToObjectIO{Context:ctx, Base:mc}
 	return
 }
 
