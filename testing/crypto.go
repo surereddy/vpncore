@@ -19,7 +19,6 @@ package testing
 
 
 import (
-	"fmt"
 	crand "crypto/rand"
 	"io"
 )
@@ -28,6 +27,5 @@ import (
 func RandomBytes(len int) []byte {
 	testData := make([]byte, len)
 	io.ReadFull(crand.Reader, testData)
-	fmt.Printf("Test data is %v...\n", testData[:0x10])
 	return testData
 }
