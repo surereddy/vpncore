@@ -132,38 +132,3 @@ func (server *SimpleServer) newMessageListener(sl StreamListener, contexts []Con
 	return
 }
 
-
-
-/*
-
-func CreateServer(tranProtocol TransportProtocol, address string, cipher crypto.Cipher, password string, codecProtocol link.Protocol) (*link.Server, error) {
-	context1 := &transport.TransportStreamContext{
-		Protocol:tranProtocol,
-		ListenAddr:address,
-		RemoveAddr:""}
-	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
-
-	listener, err := NewListener([]StreamContext{context1, context2})
-	if err != nil {
-		return nil, err
-	}
-
-	return link.NewServer(listener, codecProtocol, 0x100), nil
-}
-
-func CreateClient(tranProtocol TransportProtocol, address string, cipher crypto.Cipher, password string, codecProtocol link.Protocol) (*link.Client, error) {
-	context1 := &transport.TransportStreamContext{
-		Protocol:tranProtocol,
-		ListenAddr:"",
-		RemoveAddr:address}
-	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
-
-	dialer := link.DialerFunc(func() (net.Conn, error) {
-		return Dial([]StreamContext{context1, context2})
-	})
-
-	client := link.NewClient(dialer, codecProtocol, 2, 50, 0)
-	return client, nil
-}
-
-*/
