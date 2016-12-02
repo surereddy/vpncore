@@ -32,7 +32,6 @@ import (
 	"github.com/FTwOoO/vpncore/conn/message/fragment"
 	"github.com/FTwOoO/vpncore/conn/message/protobuf"
 	"reflect"
-	"github.com/golang/protobuf/proto"
 )
 
 func TestStreamIO(t *testing.T) {
@@ -177,11 +176,11 @@ func TestAllStack(t *testing.T) {
 
 	}
 
-	testMessageIOReadWrite(t, listener, connection, []proto.Message{sendMsg1, sendMsg2})
+	testMessageIOReadWrite(t, listener, connection, []*mt.TestPacket{sendMsg1, sendMsg2})
 
 }
 
-func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connection conn.ObjectIO, msgs []proto.Message) {
+func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connection conn.ObjectIO, msgs []*mt.TestPacket) {
 	defer listener.Close()
 	defer connection.Close()
 
@@ -208,7 +207,7 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 
 			fmt.Printf("[C] Read msg: %v\n", recvMsg)
 
-			if !recvMsg.(*mt.TestPacket).Equal(msg.(*mt.TestPacket)) {
+			if !recvMsg.(*mt.TestPacket).Equal(msg) {
 				t.Fatal()
 			}
 
@@ -228,7 +227,7 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 
 			fmt.Printf("[L] Read msg %v\n", recvMsg)
 
-			if !recvMsg.(*mt.TestPacket).Equal(msg.(*mt.TestPacket)) {
+			if !recvMsg.(*mt.TestPacket).Equal(msg) {
 				t.Fatal()
 			}
 		}

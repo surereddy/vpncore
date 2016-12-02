@@ -20,7 +20,6 @@ package udp
 import (
 	"net"
 	"time"
-	"github.com/FTwOoO/vpncore/conn"
 )
 
 type udpMessageIO struct {
