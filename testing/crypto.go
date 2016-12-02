@@ -15,23 +15,19 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package transport
+package testing
+
 
 import (
-	"net"
-	"github.com/FTwOoO/vpncore/conn"
+	"fmt"
+	crand "crypto/rand"
+	"io"
 )
 
-type transportListener struct {
-	net.Listener
-	proto    conn.TransportProtocol
-}
 
-func (l *transportListener) Accept() (conn.StreamIO, error) {
-	c, err := l.Listener.Accept()
-	if err != nil {
-		return nil, err
-	} else {
-		return &transportIO{Conn:c, proto:l.proto}, nil
-	}
+func RandomBytes(len int) []byte {
+	testData := make([]byte, len)
+	io.ReadFull(crand.Reader, testData)
+	fmt.Printf("Test data is %v...\n", testData[:0x10])
+	return testData
 }

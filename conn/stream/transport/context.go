@@ -73,5 +73,7 @@ func (this *TransportStreamContext) Layer() conn.Layer {
 }
 
 func (this *TransportStreamContext) Valid() (bool, error) {
-	return this.Protocol != "" && this.ListenAddr != "" && this.RemoveAddr != ""
+	res := this.Protocol != "" && this.ListenAddr != "" && this.RemoveAddr != ""
+
+	return res, nil
 }

@@ -19,12 +19,11 @@ package conn_test
 
 import (
 	"testing"
+	mt "github.com/FTwOoO/vpncore/testing"
 	"github.com/FTwOoO/vpncore/crypto"
 	"fmt"
 	"time"
-	"io"
 	"bytes"
-	crand "crypto/rand"
 	mrand "math/rand"
 	"sync"
 	"github.com/FTwOoO/vpncore/conn/stream/crypt"
@@ -37,18 +36,19 @@ func TestNewListener(t *testing.T) {
 	password := "123456"
 	port := mrand.Intn(100) + 20000
 	testDatalens := []int{0x10, 0x100, 0x1000, 0x10000, 0x10000}
-	testCiphers := []crypto.Cipher{crypto.AES128CFB, crypto.AES256CFB, /*enc.SALSA20,*/ crypto.NONE}
+	testCiphers := []crypto.Cipher{crypto.AES128CFB, crypto.AES256CFB, /*enc.SALSA20,*/
+		crypto.NONE}
 
 	for _, testDatalen := range testDatalens {
 		for _, cipher := range testCiphers {
 			fmt.Printf("Test PROTOCOL[%s] with ENCRYPTION[%s] PASS[%s] DATALEN[%d]\n", proto, cipher, password, testDatalen)
-			testOneConnection(t, proto, cipher, port, password, testDatalen)
+			testStreamOnly(t, proto, cipher, port, password, testDatalen)
 
 		}
 	}
 }
 
-func testOneConnection(t *testing.T, proto conn.TransportProtocol, cipher crypto.Cipher, port int, password string, testDatalen int) {
+func testStreamOnly(t *testing.T, proto conn.TransportProtocol, cipher crypto.Cipher, port int, password string, testDatalen int) {
 
 	context1 := &transport.TransportStreamContext{
 		Protocol:proto,
@@ -56,44 +56,49 @@ func testOneConnection(t *testing.T, proto conn.TransportProtocol, cipher crypto
 		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
 	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
 
-	l, err := conn.NewListener([]conn.StreamContext{context1, context2})
+	lisener, err := context1.Listen()
 	if err != nil {
 		t.Fatal(err)
 	}
+	lisener = &conn.WrapStreamListener{Base:lisener, Contexts:[]conn.StreamContext{context2}}
+	defer lisener.Close()
 
-	testData := make([]byte, testDatalen)
-	io.ReadFull(crand.Reader, testData)
-	fmt.Printf("Test data is %v...\n", testData[:0x10])
+	connection, err := context1.Dial()
+	connection = conn.WrapStream([]conn.StreamContext{context2}, connection)
+	defer connection.Close()
 
+	testData := mt.RandomBytes(testDatalen)
 	var wg sync.WaitGroup
 	wg.Add(2)
 
 	go func() {
 		defer wg.Done()
 
-		expectedData := make([]byte, testDatalen)
+		receiveData := make([]byte, testDatalen)
 
-		connection, err := l.Accept()
+		c, err := lisener.Accept()
 		if err != nil {
 			t.Fatal(err)
 		}
 
-		areadyRead := 0
+		nread := 0
 		for {
-			if areadyRead == testDatalen {
-				if !bytes.Equal(expectedData, testData) {
+
+			n, err := c.Read(receiveData[nread:])
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			mt.PrintBytes(receiveData[nread:], 0x10, "Read bytes")
+
+			nread += n
+			if nread >= testDatalen {
+				if !bytes.Equal(receiveData, testData) {
 					t.Fatal("Bytes does not equal!")
 				}
 				return
 			}
 
-			n, err := connection.Read(expectedData[areadyRead:])
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			fmt.Printf("Read %d bytes: %v...\n", n, expectedData[areadyRead:areadyRead + 0x10])
-			areadyRead += n
 		}
 
 	}()
@@ -102,26 +107,26 @@ func testOneConnection(t *testing.T, proto conn.TransportProtocol, cipher crypto
 
 	go func() {
 		defer wg.Done()
-
-		connection, err := conn.Dial([]conn.StreamContext{context1, context2})
-		if err != nil {
-			t.Fatal(err)
-		}
-
-		areadyWrite := 0
+		nwrite := 0
 		for {
-			if areadyWrite == testDatalen {
-				break
-			}
-			n, err := connection.Write(testData[areadyWrite:])
+			n, err := connection.Write(testData[nwrite:])
 			if err != nil {
 				t.Fatal(err)
 			}
-			fmt.Printf("Write %d bytes: %v...\n", n, testData[areadyWrite:areadyWrite + 0x10])
-			areadyWrite += n
+
+			mt.PrintBytes(testData[nwrite:], 0x10, "Write bytes")
+
+			nwrite += n
+			if nwrite >= testDatalen {
+				break
+			}
 		}
 	}()
 
 	wg.Wait()
-	l.Close()
+}
+
+func testAllStack(t *testing.T) {
+	//context3 := new(fragment.FragmentContext)
+	//context4 := protobuf.NewProtobufMessageContext()
 }

@@ -17,7 +17,9 @@
 
 package conn
 
-func wrapStream(contexts []StreamContext, origin StreamIO) (final StreamIO) {
+import "net"
+
+func WrapStream(contexts []StreamContext, origin StreamIO) (final StreamIO) {
 
 	final = origin
 	for _, ctx := range contexts[:] {
@@ -30,20 +32,29 @@ func wrapStream(contexts []StreamContext, origin StreamIO) (final StreamIO) {
 	return
 }
 
-type stackStreamListener struct {
-	StreamListener
+type WrapStreamListener struct {
+	Base StreamListener
 	Contexts []StreamContext
 }
 
-func (l *stackStreamListener) Accept() (StreamIO, error) {
-	c, err := l.StreamListener.Accept()
+func (this *WrapStreamListener) Accept() (StreamIO, error) {
+	c, err := this.Base.Accept()
 	if err != nil {
 		return nil, err
 	} else {
 
-		return wrapStream(l.Contexts, c), nil
+		return WrapStream(this.Contexts, c), nil
 	}
 }
+
+func (this *WrapStreamListener) Close() error {
+	return this.Base.Close()
+}
+
+func (this *WrapStreamListener) Addr() net.Addr{
+	return this.Base.Addr()
+}
+
 
 type transStreamToMessageListener struct {
 	Base    StreamListener
@@ -59,28 +70,45 @@ func (this *transStreamToMessageListener) Accept() (MessageIO, error) {
 	}
 }
 
-type stackMessageListener struct {
-	MessageListener
+func (this *transStreamToMessageListener) Close() error {
+	return this.Base.Close()
+}
+func (this *transStreamToMessageListener) Addr() net.Addr {
+	return this.Base.Addr()
+}
+
+type wrapMessageListener struct {
+	Base MessageListener
 	Contexts []MessageContext
 }
 
-func (l *stackMessageListener) Accept() (MessageIO, error) {
-	c, err := l.MessageListener.Accept()
+func (this *wrapMessageListener) Accept() (MessageIO, error) {
+	c, err := this.Base.Accept()
 	if err != nil {
 		return nil, err
 	} else {
 
-		newC := stackMessageIO{Base:c, Contexts:l.Contexts}
+		newC := &wrapMessageIO{Base:c, Contexts:this.Contexts}
 		return newC, nil
 	}
 }
 
-type stackMessageIO struct {
+func (this *wrapMessageListener) Close() error {
+	return this.Base.Close()
+}
+
+func (this *wrapMessageListener) Addr() net.Addr {
+	return this.Base.Addr()
+}
+
+
+
+type wrapMessageIO struct {
 	Base     MessageIO
 	Contexts []MessageContext
 }
 
-func (this *stackMessageIO) Read() (packet []byte, err error) {
+func (this *wrapMessageIO) Read() (packet []byte, err error) {
 	packet, err = this.Base.Read()
 	if err != nil {
 		return
@@ -96,7 +124,7 @@ func (this *stackMessageIO) Read() (packet []byte, err error) {
 	return
 }
 
-func (this *stackMessageIO) Write(packet []byte) error {
+func (this *wrapMessageIO) Write(packet []byte) error {
 
 	i := len(this.Contexts) - 1
 	for {
@@ -112,7 +140,7 @@ func (this *stackMessageIO) Write(packet []byte) error {
 	return this.Base.Write(packet)
 }
 
-func (this *stackMessageIO) Close() error {
+func (this *wrapMessageIO) Close() error {
 	return this.Base.Close()
 }
 
@@ -156,7 +184,14 @@ func (this *transMessageToObjectListener) Accept() (ObjectIO, error) {
 		return nil, err
 	} else {
 
-		oc := transMessageToObjectIO{Base:c, Context:this.Context}
+		oc := &transMessageToObjectIO{Base:c, Context:this.Context}
 		return oc, nil
 	}
+}
+
+func (this *transMessageToObjectListener) Close() error {
+	return this.Base.Close()
+}
+func (this *transMessageToObjectListener) Addr() net.Addr {
+	return this.Base.Addr()
 }

@@ -17,10 +17,10 @@
 
 package conn
 
-type MyServer struct {}
+type SimpleServer struct {}
 
-func (server *MyServer) NewListener(contexts []Context) (l ObjectListener, err error) {
-	if len(contexts) < 1 {
+func (server *SimpleServer) NewListener(contexts []Context) (l ObjectListener, err error) {
+	if len(contexts) < 3 {
 		return nil, ErrInvalidArgs
 	}
 
@@ -44,14 +44,24 @@ func (server *MyServer) NewListener(contexts []Context) (l ObjectListener, err e
 		}
 
 		var i int
+		ctxs := []StreamContext{}
 		for i, ctx = range contexts[:] {
+			if i == 0 {
+				continue
+			}
+
 			if _, ok := ctx.(StreamContext); !ok {
 				break
+			} else {
+				ctxs = append(ctxs, ctx.(StreamContext))
 			}
 		}
 
-		sl = stackStreamListener{Contexts:contexts[1:i]}
-		return server.newMessageListener(sl, contexts[i + 1:])
+		if len(ctxs) > 0 {
+			sl = &WrapStreamListener{Base:sl, Contexts:ctxs}
+		}
+
+		return server.newMessageListener(sl, contexts[i:])
 
 	} else {
 		return server.newMessageListener(nil, contexts[:])
@@ -59,7 +69,7 @@ func (server *MyServer) NewListener(contexts []Context) (l ObjectListener, err e
 
 }
 
-func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context) (cl ObjectListener, err error) {
+func (server *SimpleServer) newMessageListener(sl StreamListener, contexts []Context) (cl ObjectListener, err error) {
 	if len(contexts) < 2 {
 		return nil, ErrInvalidArgs
 	}
@@ -73,7 +83,7 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 			return nil, ErrInvalidCtx
 		}
 
-		ml = &transStreamToMessageListener{StreamListener:sl, Context:ctx}
+		ml = &transStreamToMessageListener{Base:sl, Context:ctx}
 		if err != nil {
 			return
 		}
@@ -91,12 +101,16 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 	}
 
 	var i int = -1
+	ctxs := []MessageContext{}
+
 	for i, ctx = range contexts[:] {
 		if i == 0 {
 			continue
 		}
 		if _, ok := ctx.(MessageContext); !ok {
 			break
+		} else {
+			ctxs = append(ctxs, ctx.(MessageContext))
 		}
 	}
 
@@ -105,8 +119,8 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 		return nil, ErrInvalidCtx
 	}
 
-	if i-1 > 0 {
-		ml = stackMessageListener{Contexts:contexts[1:i]}
+	if len(ctxs) > 0 {
+		ml = &wrapMessageListener{Base:ml, Contexts:ctxs}
 	}
 
 	ctx = contexts[i]
@@ -114,7 +128,7 @@ func (server *MyServer) newMessageListener(sl StreamListener, contexts []Context
 		return nil, ErrInvalidCtx
 	}
 
-	cl = transMessageToObjectListener{Context:ctx, Base:ml}
+	cl = &transMessageToObjectListener{Context:ctx.(MessageToObjectContext), Base:ml}
 	return
 }
 

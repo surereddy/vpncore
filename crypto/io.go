@@ -59,10 +59,12 @@ func (this *CryptionReadWriter) Write(data []byte) (int, error) {
 }
 
 func (this *CryptionReadWriter) Close() error {
-	if c, ok := this.base.(io.Closer); ok {
-		c.(io.Closer).Close()
-	}
-
 	this.base = nil
 	this.stream = nil
+
+	if c, ok := this.base.(io.Closer); ok {
+		return c.(io.Closer).Close()
+	}
+
+	return nil
 }

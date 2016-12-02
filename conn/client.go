@@ -17,9 +17,9 @@
 
 package conn
 
-type MyClient struct {}
+type SimpleClient struct {}
 
-func (client *MyClient) Dial(contexts []Context) (m ObjectIO, err error) {
+func (client *SimpleClient) Dial(contexts []Context) (m ObjectIO, err error) {
 	if len(contexts) < 1 {
 		return nil, ErrInvalidArgs
 	}
@@ -62,7 +62,7 @@ func (client *MyClient) Dial(contexts []Context) (m ObjectIO, err error) {
 
 }
 
-func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (oc ObjectIO, err error) {
+func (client *SimpleClient) dialMessageConn(c StreamIO, contexts []Context) (oc ObjectIO, err error) {
 	if len(contexts) < 2 {
 		return nil, ErrInvalidArgs
 	}
@@ -92,12 +92,16 @@ func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (oc Obje
 
 
 	var i int = -1
+		ctxs := []MessageContext{}
+
 	for i, ctx = range contexts[:] {
 		if i == 0 {
 			continue
 		}
 		if _, ok := ctx.(MessageContext); !ok {
 			break
+		}else {
+			ctxs = append(ctxs, ctx.(MessageContext))
 		}
 	}
 
@@ -105,8 +109,8 @@ func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (oc Obje
 		return nil, ErrInvalidCtx
 	}
 
-	if i-1 > 0 {
-		mc = stackMessageIO{Base:mc, Contexts:contexts[1:i]}
+	if len(ctxs) > 0 {
+		mc = &wrapMessageIO{Base:mc, Contexts:ctxs}
 	}
 
 
@@ -115,42 +119,9 @@ func (client *MyClient) dialMessageConn(c StreamIO, contexts []Context) (oc Obje
 		return nil, ErrInvalidCtx
 	}
 
-	oc = transMessageToObjectIO{Context:ctx, Base:mc}
+	oc = &transMessageToObjectIO{Context:ctx.(MessageToObjectContext), Base:mc}
 	return
 }
 
 
 
-/*
-
-func CreateServer(tranProtocol TransportProtocol, address string, cipher crypto.Cipher, password string, codecProtocol link.Protocol) (*link.Server, error) {
-	context1 := &transport.TransportStreamContext{
-		Protocol:tranProtocol,
-		ListenAddr:address,
-		RemoveAddr:""}
-	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
-
-	listener, err := NewListener([]StreamContext{context1, context2})
-	if err != nil {
-		return nil, err
-	}
-
-	return link.NewServer(listener, codecProtocol, 0x100), nil
-}
-
-func CreateClient(tranProtocol TransportProtocol, address string, cipher crypto.Cipher, password string, codecProtocol link.Protocol) (*link.Client, error) {
-	context1 := &transport.TransportStreamContext{
-		Protocol:tranProtocol,
-		ListenAddr:"",
-		RemoveAddr:address}
-	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
-
-	dialer := link.DialerFunc(func() (net.Conn, error) {
-		return Dial([]StreamContext{context1, context2})
-	})
-
-	client := link.NewClient(dialer, codecProtocol, 2, 50, 0)
-	return client, nil
-}
-
-*/

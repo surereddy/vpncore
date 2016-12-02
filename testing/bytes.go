@@ -17,18 +17,8 @@
 
 package testing
 
+import "fmt"
 
-import (
-	"net"
-	"math/rand"
-)
-
-func RandomIPv4Address(r *rand.Rand) net.IP {
-	num := r.Uint32()
-	return []byte{
-		byte(num >> 24),
-		byte(num >> 16),
-		byte(num >> 8),
-		byte(num),
-	}
+func PrintBytes(b []byte, n int, title string) {
+	fmt.Printf("%s: %v\n", title, b[:n])
 }

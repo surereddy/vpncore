@@ -44,7 +44,7 @@ func (this *CryptStreamContext) Valid() (bool, error) {
 func (this *CryptStreamContext) Pipe(base conn.StreamIO) conn.StreamIO {
 	cipher, err := crypto.NewCipher(this.EncrytionConfig)
 	if err != nil {
-		return nil, err
+		return nil
 	}
 
 	return crypto.NewCryptionReadWriter(base, cipher)

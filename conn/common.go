@@ -159,7 +159,7 @@ type ObjectIO interface {
 
 type Marshaler interface {
 	Marshal() ([]byte, error)
-	Unmarshal([]byte) (n int, error)
+	Unmarshal([]byte) (int, error)
 }
 
 type Dialer interface {

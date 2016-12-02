@@ -15,23 +15,20 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package transport
+package testing
+
 
 import (
 	"net"
-	"github.com/FTwOoO/vpncore/conn"
+	mrand "math/rand"
 )
 
-type transportListener struct {
-	net.Listener
-	proto    conn.TransportProtocol
-}
-
-func (l *transportListener) Accept() (conn.StreamIO, error) {
-	c, err := l.Listener.Accept()
-	if err != nil {
-		return nil, err
-	} else {
-		return &transportIO{Conn:c, proto:l.proto}, nil
+func RandomIPv4Address(r *mrand.Rand) net.IP {
+	num := r.Uint32()
+	return []byte{
+		byte(num >> 24),
+		byte(num >> 16),
+		byte(num >> 8),
+		byte(num),
 	}
 }
