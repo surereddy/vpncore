@@ -112,7 +112,7 @@ type StreamToMessageContext interface {
 
 type MessageContext interface {
 	Context
-	Encode([]byte) ([]byte)
+	Encode([]byte) ([]byte, error)
 	Decode([]byte) ([]byte, error)
 }
 

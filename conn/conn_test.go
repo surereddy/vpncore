@@ -32,6 +32,8 @@ import (
 	"github.com/FTwOoO/vpncore/conn/message/fragment"
 	"github.com/FTwOoO/vpncore/conn/message/protobuf"
 	"reflect"
+	"github.com/flynn/noise"
+	"github.com/FTwOoO/vpncore/conn/message/noiseik"
 )
 
 func TestStreamIO(t *testing.T) {
@@ -134,11 +136,11 @@ func testStreamIOReadWrite(t *testing.T, listener conn.StreamListener, connectio
 
 }
 
-func TestAllStack(t *testing.T) {
+func TestStreamToObject(t *testing.T) {
 	p := conn.PROTO_TCP
-	password := "123456"
 	port := mrand.Intn(100) + 30000
 	cipher := crypto.AES256CFB
+	password := "123456"
 
 	context1 := &transport.TransportStreamContext{
 		Protocol:p,
@@ -193,7 +195,7 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 
 	for i, msg := range msgs {
 		if i % 2 == 1 {
-			fmt.Printf("[L] Write msg %v\n", msg)
+			fmt.Printf("[S] Write msg %v\n", msg)
 
 			err = serverC.Write(msg)
 			if err != nil {
@@ -225,7 +227,7 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 				t.Fatal(err)
 			}
 
-			fmt.Printf("[L] Read msg %v\n", recvMsg)
+			fmt.Printf("[S] Read msg %v\n", recvMsg)
 
 			if !recvMsg.(*mt.TestPacket).Equal(msg) {
 				t.Fatal()
@@ -235,3 +237,89 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 
 }
 
+func createNoiseIKContextPair() []*noiseik.NoiseIKMessageContext {
+	cs := noise.NewCipherSuite(noise.DH25519, noise.CipherAESGCM, noise.HashSHA256)
+	staticI := cs.GenerateKeypair(nil)
+	staticR := cs.GenerateKeypair(nil)
+
+	context1, err := noiseik.NewNoiseIKMessageContext(
+		cs,
+		[]byte("vpncore"),
+		staticI,
+		noise.DHKey{Public:staticR.Public},
+		true,
+	)
+	if err != nil {
+
+	}
+
+	context2, err := noiseik.NewNoiseIKMessageContext(
+		cs,
+		[]byte("vpncore"),
+		noise.DHKey{},
+		staticR,
+		false,
+	)
+
+	return []*noiseik.NoiseIKMessageContext{context1, context2}
+}
+
+func TestStreamToObjectWithNoiseHandshake(t *testing.T) {
+	p := conn.PROTO_TCP
+	port := mrand.Intn(100) + 30000
+
+	context1 := &transport.TransportStreamContext{
+		Protocol:p,
+		ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
+		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
+
+	context2 := new(fragment.FragmentContext)
+
+	contexts := createNoiseIKContextPair()
+	context3_I := contexts[0]
+	context3_R := contexts[1]
+
+	context4, err := protobuf.NewProtobufMessageContext([]reflect.Type{reflect.TypeOf(&mt.TestPacket{})})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	contexts_client := []conn.Context{context1, context2, context3_I, context4}
+	contexts_server := []conn.Context{context1, context2, context3_R, context4}
+
+	server := new(conn.SimpleServer)
+	client := new(conn.SimpleClient)
+
+	listener, err := server.NewListener(contexts_server)
+	connection, err := client.Dial(contexts_client)
+
+	sendMsg1 := &mt.TestPacket{
+		Mark: false,
+		Sid:  1,
+		Sessions: map[string]uint64{"-> e, es, s, ss":1},
+
+	}
+
+	sendMsg2 := &mt.TestPacket{
+		Mark: true,
+		Sid:  2,
+		Sessions: map[string]uint64{"<- e, ee, se":2},
+
+	}
+
+	sendMsg3 := &mt.TestPacket{
+		Mark: false,
+		Sid:  3,
+		Sessions: map[string]uint64{"Sent data packet to server":3},
+
+	}
+
+	sendMsg4 := &mt.TestPacket{
+		Mark: false,
+		Sid:  4,
+		Sessions: map[string]uint64{"Sent data packet to client":4},
+	}
+
+	testMessageIOReadWrite(t, listener, connection, []*mt.TestPacket{sendMsg1, sendMsg2, sendMsg3, sendMsg4})
+
+}

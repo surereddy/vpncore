@@ -121,7 +121,7 @@ func (this *wrapMessageIO) Read() (packet []byte, err error) {
 	return
 }
 
-func (this *wrapMessageIO) Write(packet []byte) error {
+func (this *wrapMessageIO) Write(packet []byte) (err error) {
 
 	i := len(this.Contexts) - 1
 	for {
@@ -130,7 +130,11 @@ func (this *wrapMessageIO) Write(packet []byte) error {
 		}
 
 		ctx := this.Contexts[i]
-		packet = ctx.Encode(packet)
+		packet, err = ctx.Encode(packet)
+		if err != nil {
+			return
+		}
+
 		i -= 1
 	}
 

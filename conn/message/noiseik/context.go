@@ -15,11 +15,12 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package noise
+package noiseik
 
 import (
 	"github.com/FTwOoO/vpncore/conn"
 	"github.com/flynn/noise"
+	"fmt"
 )
 
 type NoiseIKMessageContext struct {
@@ -29,7 +30,7 @@ type NoiseIKMessageContext struct {
 
 	CS0           *noise.CipherState
 	CS1           *noise.CipherState
-	handshakeStep uint
+	handshakeStep int
 }
 
 func NewNoiseIKMessageContext(cs noise.CipherSuite, pg []byte, staticI noise.DHKey, staticR noise.DHKey, isInitiator bool) (*NoiseIKMessageContext, error) {
@@ -56,6 +57,7 @@ func NewNoiseIKMessageContext(cs noise.CipherSuite, pg []byte, staticI noise.DHK
 		this.Hs = noise.NewHandshakeState(noise.Config{
 			CipherSuite: cs,
 			Pattern: noise.HandshakeIK,
+			Initiator:false,
 			Prologue: pg,
 			StaticKeypair: staticR},
 		)
@@ -86,8 +88,8 @@ func (this *NoiseIKMessageContext) IsReadStep() bool {
 	return (this.handshakeStep % 2 == 1 && !this.IsInitiator) || (this.handshakeStep % 2 == 0 && this.IsInitiator)
 }
 
-func (this *NoiseIKMessageContext) IsFinalStel() bool {
-	return this.handshakeStep + 2 > len(this.Pattern.Messages)
+func (this *NoiseIKMessageContext) IsFinalStep() bool {
+	return this.handshakeStep == len(this.Pattern.Messages)
 }
 
 func (this *NoiseIKMessageContext) StepOne() {
@@ -106,19 +108,20 @@ func (this *NoiseIKMessageContext) HandshakeDone(cs0 *noise.CipherState, cs1 *no
 	}
 }
 
-func (this *NoiseIKMessageContext) Encode(b []byte) (packet []byte) {
-	packet = b
+func (this *NoiseIKMessageContext) Encode(b []byte) (packet []byte, err error) {
 
 	if !this.IsHandshakeCompleted() {
 		this.StepOne()
 
 		if this.IsWriteStep() {
 			var cs0, cs1 *noise.CipherState
-			packet, cs0, cs1 = this.Hs.WriteMessage(nil, packet)
+			packet, cs0, cs1 = this.Hs.WriteMessage(nil, b)
 
 			// final msg for noise handshake pattern we can extract the
 			// cipher
-			if this.IsFinalStel() {
+			if this.IsFinalStep() {
+				fmt.Printf("Handshake completed, im Initiator? %v\n", this.IsInitiator)
+				fmt.Printf("[S] CS0: %v, CS1: %v\n", cs0, cs1)
 				this.HandshakeDone(cs0, cs1)
 			}
 
@@ -127,7 +130,8 @@ func (this *NoiseIKMessageContext) Encode(b []byte) (packet []byte) {
 		}
 
 	} else {
-		packet = this.CS0.Encrypt(nil, nil, packet)
+		packet = this.CS0.Encrypt(nil, nil, b)
+		fmt.Printf("Encode %v to %v\n", b, packet)
 	}
 
 	return
@@ -140,25 +144,37 @@ func (this *NoiseIKMessageContext) Decode(b []byte) (packet []byte, err error) {
 
 		if this.IsReadStep() {
 			var cs0, cs1 *noise.CipherState
-			packet, cs0, cs1, err = this.Hs.ReadMessage(nil, packet)
+			packet, cs0, cs1, err = this.Hs.ReadMessage(nil, b)
 			if err != nil {
 				return
 			}
 
 			// final msg for noise handshake pattern we can extract the
 			// cipher
-			if this.IsFinalStel() {
+			if this.IsFinalStep() {
+				fmt.Printf("Handshake completed, im Initiator? %v\n", this.IsInitiator)
+				fmt.Printf("[C] CS0: %v, CS1: %v\n", cs0, cs1)
+
 				this.HandshakeDone(cs0, cs1)
 			}
 
 			return
 
 		} else {
-			return conn.ErrInValidHandshakeStep
+			fmt.Printf("current step %d, \n", this.handshakeStep)
+			return nil, conn.ErrInValidHandshakeStep
 		}
 
 	} else {
-		packet = this.CS0.Encrypt(nil, nil, packet)
+		fmt.Printf("Try to Decode %v\n", b)
+
+		packet, err = this.CS0.Decrypt(nil, nil, b)
+		if err != nil {
+			return
+		}
+
+		fmt.Printf("Decode %v to %v\n", b, packet)
+
 	}
 	return
 }
