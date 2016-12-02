@@ -40,5 +40,9 @@ func ProtoMessageEqual(msg1 proto.Message, msg2 proto.Message) bool {
 		return false
 	}
 
+	if !bytes.Equal(b1, b2) {
+		fmt.Printf("b1:%v\n, b2:%v\n", b1, b2)
+	}
+
 	return bytes.Equal(b1, b2)
 }

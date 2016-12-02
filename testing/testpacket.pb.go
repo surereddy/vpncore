@@ -6,7 +6,10 @@ package testing
 
 import proto "github.com/golang/protobuf/proto"
 import fmt "fmt"
-import math "math"
+import (
+	math "math"
+	"reflect"
+)
 
 // Reference imports to suppress errors if they are not otherwise used.
 var _ = proto.Marshal
@@ -29,6 +32,16 @@ func (m *TestPacket) GetSessions() map[string]uint64 {
 		return m.Sessions
 	}
 	return nil
+}
+
+
+func (m *TestPacket) Equal(msg2 *TestPacket) bool {
+	// Now test and newTest contain the same data.
+	if m.Sid != msg2.Sid || m.Mark != msg2.Mark {
+		return false
+	}
+
+	return reflect.DeepEqual(m.Sessions, msg2.Sessions)
 }
 
 func init() {

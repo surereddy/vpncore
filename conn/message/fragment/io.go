@@ -25,7 +25,6 @@ import (
 
 type FragmentIO struct {
 	base    conn.StreamIO
-	buf     []byte
 
 	closedM bool
 	closedC chan struct{}
@@ -36,30 +35,39 @@ func NewFragmentIO(base conn.StreamIO) (*FragmentIO, error) {
 		base: base,
 		closedM:false,
 		closedC:make(chan struct{}),
-		buf: make([]byte, 0x10000),
 	}
 
 	return f, nil
 }
 
 func (this *FragmentIO) Read() (buf []byte, err error) {
-	var length uint16
 	var lengthBytes [2]byte
 	if _, err = io.ReadFull(this.base, lengthBytes[:]); err != nil {
 		return
 	}
 
-	binary.BigEndian.PutUint16(lengthBytes[:], length)
-	if _, err = io.ReadFull(this.base, this.buf[:length]); err != nil {
+	length := binary.BigEndian.Uint16(lengthBytes[:])
+	buf = make([]byte, length)
+
+	if _, err = io.ReadFull(this.base, buf[:length]); err != nil {
 		return
 	}
 
-	buf = make([]byte, length)
-	copy(buf, this.buf[:length])
 	return
 }
 
 func (this *FragmentIO) Write(b []byte) error {
+	if b == nil || len(b) == 0 {
+		return nil
+	}
+
+	var lengthBytes [2]byte
+	binary.BigEndian.PutUint16(lengthBytes[:], uint16(len(b)))
+
+	_, err := this.base.Write(lengthBytes[:])
+	if err != nil {
+		return err
+	}
 
 	for {
 		if len(b) <= 0 {

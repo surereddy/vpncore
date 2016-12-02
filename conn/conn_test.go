@@ -165,15 +165,15 @@ func TestAllStack(t *testing.T) {
 
 	sendMsg1 := &mt.TestPacket{
 		Mark: false,
-		Sid:  999,
-		Sessions: map[string]uint64{"a":1, "b":2},
+		Sid:  1,
+		Sessions: map[string]uint64{"hello":1, "hi":2},
 
 	}
 
 	sendMsg2 := &mt.TestPacket{
 		Mark: true,
-		Sid:  18,
-		Sessions: map[string]uint64{"xxx":10, "yyy":20},
+		Sid:  2,
+		Sessions: map[string]uint64{"go away":10, "please":20},
 
 	}
 
@@ -185,74 +185,54 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 	defer listener.Close()
 	defer connection.Close()
 
-	wg := new(sync.WaitGroup)
-	wg.Add(2)
+	serverC, err := listener.Accept()
+	if err != nil {
+		t.Fatal(err)
+	}
 
-	go func() {
-		defer wg.Done()
+	clientC := connection
 
-		c, err := listener.Accept()
-		if err != nil {
-			t.Fatal(err)
-		}
+	for i, msg := range msgs {
+		if i % 2 == 1 {
+			fmt.Printf("[L] Write msg %v\n", msg)
 
-		fmt.Printf("Accept a conn !\n")
+			err = serverC.Write(msg)
+			if err != nil {
+				t.Fatal(err)
+			}
 
-		for i, msg := range msgs {
-			if i % 2 == 1 {
-				err = c.Write(msg)
-				if err != nil {
-					t.Fatal(err)
-				}
-				fmt.Printf("[L] Write msg %v\n", msg)
+			recvMsg, err := clientC.Read()
+			if err != nil {
+				t.Fatal(err)
+			}
 
-			} else {
-				recvMsg, err := c.Read()
-				if err != nil {
-					t.Fatal(err)
-				}
+			fmt.Printf("[C] Read msg: %v\n", recvMsg)
 
-				fmt.Printf("[L] Read msg %v\n", msg)
+			if !recvMsg.(*mt.TestPacket).Equal(msg.(*mt.TestPacket)) {
+				t.Fatal()
+			}
 
-				if !mt.ProtoMessageEqual(recvMsg.(proto.Message), msg) {
-					t.Fatal()
-				}
+		} else {
+
+			fmt.Printf("[C] Write msg: %v\n", msg)
+
+			err := clientC.Write(msg)
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			recvMsg, err := serverC.Read()
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			fmt.Printf("[L] Read msg %v\n", recvMsg)
+
+			if !recvMsg.(*mt.TestPacket).Equal(msg.(*mt.TestPacket)) {
+				t.Fatal()
 			}
 		}
+	}
 
-	}()
-
-	<-time.After(1 * time.Second)
-
-	go func() {
-		defer wg.Done()
-		c := connection
-
-		for i, msg := range msgs {
-
-			if i % 2 == 0 {
-				err := c.Write(msg)
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				fmt.Printf("[C] Write msg %v\n", msg)
-
-			} else {
-				recvMsg, err := c.Read()
-				if err != nil {
-					t.Fatal(err)
-				}
-
-				fmt.Printf("[C] Read msg %v\n", msg)
-
-				if !mt.ProtoMessageEqual(recvMsg.(proto.Message), msg) {
-					t.Fatal()
-				}
-			}
-		}
-	}()
-
-	wg.Wait()
 }
 
