@@ -30,7 +30,8 @@ func NewProtobufMessageContext(msgTypes []reflect.Type) (*ProtobufMessageContext
 }
 
 func (self *ProtobufMessageContext) Valid() (bool, error) {
-	return len(self.ValueToMsgType) > 0 && len(self.ValueToMsgType) == len(self.MsgTypeToValue)
+	res:= len(self.ValueToMsgType) > 0 && len(self.ValueToMsgType) == len(self.MsgTypeToValue)
+	return res, nil
 }
 
 

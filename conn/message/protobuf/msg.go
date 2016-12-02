@@ -66,12 +66,12 @@ type protobufMsg struct {
 func (d *protobufMsg) Unmarshal(buf []byte) (n int, err error) {
 	header, err := d.decodeHeader(buf)
 	if err != nil {
-		return err
+		return
 	}
 
-	buf = buf[header.HeaderSize()]
+	buf = buf[header.HeaderSize():]
 	if len(buf) < header.HeaderSize() {
-		return errors.New("Body content not enough!")
+		return 0, errors.New("Body content not enough!")
 	}
 
 	msg, err := d.decodeBody(buf, header)
@@ -109,6 +109,7 @@ func (d *protobufMsg) Marshal() (packet []byte, err error) {
 	packet = make([]byte, len(header) + len(body))
 	copy(packet, header)
 	copy(packet[len(header):], body)
+
 	return
 }
 

@@ -29,10 +29,14 @@ import (
 	"github.com/FTwOoO/vpncore/conn/stream/transport"
 	"github.com/FTwOoO/vpncore/conn"
 	"time"
+	"github.com/FTwOoO/vpncore/conn/message/fragment"
+	"github.com/FTwOoO/vpncore/conn/message/protobuf"
+	"reflect"
+	"github.com/golang/protobuf/proto"
 )
 
 func TestStreamIO(t *testing.T) {
-	proto := conn.PROTO_TCP
+	p := conn.PROTO_TCP
 	password := "123456"
 	testCiphers := []crypto.Cipher{crypto.AES128CFB, crypto.AES256CFB, /*enc.SALSA20,*/
 		crypto.NONE}
@@ -42,10 +46,10 @@ func TestStreamIO(t *testing.T) {
 		for _, testDatalen := range testDatalens {
 			port := mrand.Intn(100) + 30000
 
-			fmt.Printf("Test PROTOCOL[%s] with ENCRYPTION[%s] PASS[%s]\n", proto, cipher, password)
+			fmt.Printf("Test PROTOCOL[%s] with ENCRYPTION[%s] PASS[%s]\n", p, cipher, password)
 
 			context1 := &transport.TransportStreamContext{
-				Protocol:proto,
+				Protocol:p,
 				ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
 				RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
 			context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
@@ -131,7 +135,124 @@ func testStreamIOReadWrite(t *testing.T, listener conn.StreamListener, connectio
 
 }
 
-func testAllStack(t *testing.T) {
-	//context3 := new(fragment.FragmentContext)
-	//context4 := protobuf.NewProtobufMessageContext()
+func TestAllStack(t *testing.T) {
+	p := conn.PROTO_TCP
+	password := "123456"
+	port := mrand.Intn(100) + 30000
+	cipher := crypto.AES256CFB
+
+	context1 := &transport.TransportStreamContext{
+		Protocol:p,
+		ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
+		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
+	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{
+		Cipher:cipher, Password:password,
+	},
+	}
+
+	context3 := new(fragment.FragmentContext)
+	context4, err := protobuf.NewProtobufMessageContext([]reflect.Type{reflect.TypeOf(&mt.TestPacket{})})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	contexts := []conn.Context{context1, context2, context3, context4}
+	server := new(conn.SimpleServer)
+	client := new(conn.SimpleClient)
+
+	listener, err := server.NewListener(contexts)
+	connection, err := client.Dial(contexts)
+
+	sendMsg1 := &mt.TestPacket{
+		Mark: false,
+		Sid:  999,
+		Sessions: map[string]uint64{"a":1, "b":2},
+
+	}
+
+	sendMsg2 := &mt.TestPacket{
+		Mark: true,
+		Sid:  18,
+		Sessions: map[string]uint64{"xxx":10, "yyy":20},
+
+	}
+
+	testMessageIOReadWrite(t, listener, connection, []proto.Message{sendMsg1, sendMsg2})
+
 }
+
+func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connection conn.ObjectIO, msgs []proto.Message) {
+	defer listener.Close()
+	defer connection.Close()
+
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
+
+	go func() {
+		defer wg.Done()
+
+		c, err := listener.Accept()
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		fmt.Printf("Accept a conn !\n")
+
+		for i, msg := range msgs {
+			if i % 2 == 1 {
+				err = c.Write(msg)
+				if err != nil {
+					t.Fatal(err)
+				}
+				fmt.Printf("[L] Write msg %v\n", msg)
+
+			} else {
+				recvMsg, err := c.Read()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				fmt.Printf("[L] Read msg %v\n", msg)
+
+				if !mt.ProtoMessageEqual(recvMsg.(proto.Message), msg) {
+					t.Fatal()
+				}
+			}
+		}
+
+	}()
+
+	<-time.After(1 * time.Second)
+
+	go func() {
+		defer wg.Done()
+		c := connection
+
+		for i, msg := range msgs {
+
+			if i % 2 == 0 {
+				err := c.Write(msg)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				fmt.Printf("[C] Write msg %v\n", msg)
+
+			} else {
+				recvMsg, err := c.Read()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				fmt.Printf("[C] Read msg %v\n", msg)
+
+				if !mt.ProtoMessageEqual(recvMsg.(proto.Message), msg) {
+					t.Fatal()
+				}
+			}
+		}
+	}()
+
+	wg.Wait()
+}
+

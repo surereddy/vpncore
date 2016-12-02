@@ -17,8 +17,28 @@
 
 package testing
 
-import "fmt"
+import (
+	"fmt"
+	"github.com/golang/protobuf/proto"
+	"bytes"
+)
 
 func PrintBytes(b []byte, n int, title string) {
 	fmt.Printf("%s: %v\n", title, b[:n])
+}
+
+
+func ProtoMessageEqual(msg1 proto.Message, msg2 proto.Message) bool {
+	// Now test and newTest contain the same data.
+	b1, err := proto.Marshal(msg1)
+	if err != nil {
+		return false
+	}
+
+	b2, err := proto.Marshal(msg2)
+	if err != nil {
+		return false
+	}
+
+	return bytes.Equal(b1, b2)
 }
