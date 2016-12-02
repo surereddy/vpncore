@@ -33,7 +33,7 @@ func WrapStream(contexts []StreamContext, origin StreamIO) (final StreamIO) {
 }
 
 type WrapStreamListener struct {
-	Base StreamListener
+	Base     StreamListener
 	Contexts []StreamContext
 }
 
@@ -51,10 +51,9 @@ func (this *WrapStreamListener) Close() error {
 	return this.Base.Close()
 }
 
-func (this *WrapStreamListener) Addr() net.Addr{
+func (this *WrapStreamListener) Addr() net.Addr {
 	return this.Base.Addr()
 }
-
 
 type transStreamToMessageListener struct {
 	Base    StreamListener
@@ -78,7 +77,7 @@ func (this *transStreamToMessageListener) Addr() net.Addr {
 }
 
 type wrapMessageListener struct {
-	Base MessageListener
+	Base     MessageListener
 	Contexts []MessageContext
 }
 
@@ -100,8 +99,6 @@ func (this *wrapMessageListener) Close() error {
 func (this *wrapMessageListener) Addr() net.Addr {
 	return this.Base.Addr()
 }
-
-
 
 type wrapMessageIO struct {
 	Base     MessageIO
