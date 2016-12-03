@@ -20,7 +20,8 @@ package conn
 type SimpleServer struct {}
 
 func (server *SimpleServer) NewListener(contexts []Context) (l ObjectListener, err error) {
-	if len(contexts) < 3 {
+	if len(contexts) < 2 {
+
 		return nil, ErrInvalidArgs
 	}
 

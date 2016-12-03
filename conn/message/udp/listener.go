@@ -29,7 +29,6 @@ type UdpMessageListener struct {
 	closed          chan struct{}
 	connections     map[string]*udpMessageIO
 	connectionsLock sync.Mutex
-
 	newConnections  chan *udpMessageIO
 
 	buf             []byte
@@ -42,7 +41,7 @@ func NewUdpMessageListener(udpAddr *net.UDPAddr, buf []byte) (l *UdpMessageListe
 	}
 
 	l = &UdpMessageListener{c:c,
-		closed:new(chan struct{}),
+		closed:make(chan struct{}),
 		connections:map[string]*udpMessageIO{},
 		connectionsLock:sync.Mutex{},
 		newConnections: make(chan *udpMessageIO, ConnectionsChanSize),
@@ -81,33 +80,14 @@ func (this *UdpMessageListener) expire() {
 	}
 }
 
-func (this *UdpMessageListener) writeLoop(c *udpMessageIO) {
-
-	for {
-		select {
-
-		case <-this.closed:
-			return
-
-		case <-c.Closed:
-			return
-
-		case msg := <-c.WriteChan:
-			this.c.Write(msg)
-		}
-	}
-
-}
-
 func (this *UdpMessageListener) listenLoop() {
 
 	for {
-		select {
-		case <-this.closed:
+		if this.closed == nil {
 			return
 		}
 
-		n, addr, err := this.c.ReadFromUDP(this.buf)
+		n, addr, err := this.c.ReadFromUDP(this.buf[:])
 		if err != nil || n >= MaxUDPPacketSize + 1 {
 			return
 		}
@@ -116,16 +96,21 @@ func (this *UdpMessageListener) listenLoop() {
 		copy(msg, this.buf[:n])
 
 		this.connectionsLock.Lock()
-		if c, ok := this.connections[addr.String()]; !ok && c != nil {
-			newConn, _ := NewUdpMessageConn(
-				this.c.LocalAddr().(*net.UDPAddr),
+		if c, ok := this.connections[addr.String()]; !ok || c == nil {
+			newConn, err := NewUdpMessageConn(
+				this.c,
+				true,
 				addr,
-				make(chan []byte, MessageChanSizePerConn),
-				make(chan []byte, MessageChanSizePerConn),
 			)
+
+			if err != nil {
+				this.connectionsLock.Unlock()
+				continue
+
+			}
 			this.connections[addr.String()] = newConn
+			//TODO: dont block if connections exceed the connection pool
 			this.newConnections <- newConn
-			go this.writeLoop(newConn)
 		}
 
 		c := this.connections[addr.String()]
@@ -136,12 +121,28 @@ func (this *UdpMessageListener) listenLoop() {
 }
 
 func (this *UdpMessageListener) Accept() (conn.MessageIO, error) {
-	c := <-this.newConnections
-	return c, nil
+
+	select {
+	case <-this.closed:
+		return nil, conn.ErrIOClosed
+	case c := <-this.newConnections:
+		return c, nil
+	}
 }
 
 func (this *UdpMessageListener) Close() error {
+	this.connectionsLock.Lock()
+	defer this.connectionsLock.Unlock()
+
+	for _, cc := range this.connections {
+		cc.Close()
+		continue
+
+	}
+	this.connections = nil
 	close(this.closed)
+	this.closed = nil
+	return this.c.Close()
 }
 
 func (this *UdpMessageListener)  Addr() net.Addr {

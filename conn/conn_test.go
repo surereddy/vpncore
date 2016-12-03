@@ -19,21 +19,23 @@ package conn_test
 
 import (
 	"testing"
-	mt "github.com/FTwOoO/vpncore/testing"
-	"github.com/FTwOoO/vpncore/crypto"
 	"fmt"
 	"bytes"
 	mrand "math/rand"
 	"sync"
+	"reflect"
+	"time"
+	mt "github.com/FTwOoO/vpncore/testing"
+	"github.com/FTwOoO/vpncore/crypto"
 	"github.com/FTwOoO/vpncore/conn/stream/crypt"
 	"github.com/FTwOoO/vpncore/conn/stream/transport"
 	"github.com/FTwOoO/vpncore/conn"
-	"time"
 	"github.com/FTwOoO/vpncore/conn/message/fragment"
 	"github.com/FTwOoO/vpncore/conn/message/protobuf"
-	"reflect"
 	"github.com/flynn/noise"
 	"github.com/FTwOoO/vpncore/conn/message/noiseik"
+	//"github.com/FTwOoO/vpncore/conn/message/udp"
+	"github.com/FTwOoO/vpncore/conn/message/udp"
 )
 
 func TestStreamIO(t *testing.T) {
@@ -164,21 +166,32 @@ func TestStreamToObject(t *testing.T) {
 	listener, err := server.NewListener(contexts)
 	connection, err := client.Dial(contexts)
 
-	sendMsg1 := &mt.TestPacket{
-		Mark: false,
-		Sid:  1,
-		Sessions: map[string]uint64{"hello":1, "hi":2},
+	testMessageIOReadWrite(t, listener, connection, createTestPackets(2))
+
+}
+
+func createTestPackets(n int) []*mt.TestPacket {
+	packets := []*mt.TestPacket{}
+
+	for {
+		if n < 1 {
+			break
+		}
+		mark := (n % 2 == 0)
+
+		msg := &mt.TestPacket{
+			Mark: mark,
+			Sid:  uint32(n),
+			Sessions: map[string]uint64{fmt.Sprintf("hello%d", n):uint64(n), "hi":uint64(n * 2)},
+
+		}
+
+		packets = append(packets, msg)
+		n -= 1
 
 	}
 
-	sendMsg2 := &mt.TestPacket{
-		Mark: true,
-		Sid:  2,
-		Sessions: map[string]uint64{"go away":10, "please":20},
-
-	}
-
-	testMessageIOReadWrite(t, listener, connection, []*mt.TestPacket{sendMsg1, sendMsg2})
+	return packets
 
 }
 
@@ -186,54 +199,91 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 	defer listener.Close()
 	defer connection.Close()
 
-	serverC, err := listener.Accept()
-	if err != nil {
-		t.Fatal(err)
-	}
+	var serverC, clientC conn.ObjectIO
 
-	clientC := connection
+	serverReadSignal := make(chan int, 1)
+	serverWriteSignal := make(chan int, 1)
+	clientWriteSignal := make(chan int, 1)
+	clientReadSignal := make(chan int, 1)
+	clientWriteSignal <- 1
 
-	for i, msg := range msgs {
-		if i % 2 == 1 {
-			fmt.Printf("[S] Write msg %v\n", msg)
+	wg := new(sync.WaitGroup)
+	wg.Add(2)
 
-			err = serverC.Write(msg)
-			if err != nil {
-				t.Fatal(err)
-			}
+	go func() {
+		defer wg.Done()
 
-			recvMsg, err := clientC.Read()
-			if err != nil {
-				t.Fatal(err)
-			}
+		var err error
+		serverC, err = listener.Accept()
+		if err != nil {
+			t.Fatal(err)
+		}
 
-			fmt.Printf("[C] Read msg: %v\n", recvMsg)
+		for i, msg := range msgs {
+			if i % 2 == 1 {
+				<-serverWriteSignal
+				fmt.Printf("[S] Write msg %v\n", msg)
+				err = serverC.Write(msg)
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			if !recvMsg.(*mt.TestPacket).Equal(msg) {
-				t.Fatal()
-			}
+				clientReadSignal <- 1
 
-		} else {
+			} else {
 
-			fmt.Printf("[C] Write msg: %v\n", msg)
+				<-serverReadSignal
+				recvMsg, err := serverC.Read()
+				if err != nil {
+					t.Fatal(err)
+				}
 
-			err := clientC.Write(msg)
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			recvMsg, err := serverC.Read()
-			if err != nil {
-				t.Fatal(err)
-			}
-
-			fmt.Printf("[S] Read msg %v\n", recvMsg)
-
-			if !recvMsg.(*mt.TestPacket).Equal(msg) {
-				t.Fatal()
+				fmt.Printf("[S] Read msg %v\n", recvMsg)
+				if !recvMsg.(*mt.TestPacket).Equal(msg) {
+					t.Fatal()
+				}
+				serverWriteSignal <- 1
 			}
 		}
-	}
+	}()
+
+	clientC = connection
+	go func() {
+		defer wg.Done()
+
+		for i, msg := range msgs {
+
+
+			if i % 2 == 1 {
+				<-clientReadSignal
+				recvMsg, err := clientC.Read()
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				fmt.Printf("[C] Read msg: %v\n", recvMsg)
+				if !recvMsg.(*mt.TestPacket).Equal(msg) {
+					t.Fatal()
+				}
+
+				clientWriteSignal <- 1
+
+			} else {
+				<-clientWriteSignal
+
+				fmt.Printf("[C] Write msg: %v\n", msg)
+				err := clientC.Write(msg)
+				if err != nil {
+					t.Fatal(err)
+				}
+
+				serverReadSignal <- 1
+
+			}
+		}
+	}()
+
+	wg.Wait()
 
 }
 
@@ -291,35 +341,41 @@ func TestStreamToObjectWithNoiseHandshake(t *testing.T) {
 	client := new(conn.SimpleClient)
 
 	listener, err := server.NewListener(contexts_server)
+	if err != nil {
+		t.Fatal(err)
+	}
 	connection, err := client.Dial(contexts_client)
-
-	sendMsg1 := &mt.TestPacket{
-		Mark: false,
-		Sid:  1,
-		Sessions: map[string]uint64{"-> e, es, s, ss":1},
-
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	sendMsg2 := &mt.TestPacket{
-		Mark: true,
-		Sid:  2,
-		Sessions: map[string]uint64{"<- e, ee, se":2},
+	testMessageIOReadWrite(t, listener, connection, createTestPackets(4))
+}
 
+func TestMessageToObject(t *testing.T) {
+
+	port := mrand.Intn(100) + 30000
+	context1, err := udp.NewUdpMessageContext(fmt.Sprintf("127.0.0.1:%d", port))
+	context2, err := protobuf.NewProtobufMessageContext([]reflect.Type{reflect.TypeOf(&mt.TestPacket{})})
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	sendMsg3 := &mt.TestPacket{
-		Mark: false,
-		Sid:  3,
-		Sessions: map[string]uint64{"Sent data packet to server":3},
+	server := new(conn.SimpleServer)
+	client := new(conn.SimpleClient)
 
+	contexts := []conn.Context{context1, context2}
+
+	listener, err := server.NewListener(contexts)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	sendMsg4 := &mt.TestPacket{
-		Mark: false,
-		Sid:  4,
-		Sessions: map[string]uint64{"Sent data packet to client":4},
+	connection, err := client.Dial(contexts)
+	if err != nil {
+		t.Fatal(err)
 	}
 
-	testMessageIOReadWrite(t, listener, connection, []*mt.TestPacket{sendMsg1, sendMsg2, sendMsg3, sendMsg4})
+	testMessageIOReadWrite(t, listener, connection, createTestPackets(2))
 
 }

@@ -20,48 +20,94 @@ package udp
 import (
 	"net"
 	"time"
+	"github.com/FTwOoO/vpncore/conn"
 )
 
 type udpMessageIO struct {
-	localAddr  *net.UDPAddr
+	c          *net.UDPConn
+	isServer   bool
+
 	remoteAddr *net.UDPAddr
 	ReadChan   chan []byte
-	WriteChan  chan []byte
 	LastSeen   time.Time
-	Closed     chan struct{}
+	closed     chan struct{}
 }
 
-func NewUdpMessageConn(localAddr *net.UDPAddr, remoteAddr *net.UDPAddr, readChan <- chan []byte, writeChan<- chan []byte) (*udpMessageIO, error) {
+func NewUdpMessageConn(c *net.UDPConn, isServer bool, remoteAddr *net.UDPAddr) (*udpMessageIO, error) {
 
-	c := new(udpMessageIO)
-	c.remoteAddr = remoteAddr
-	c.localAddr = localAddr
-	c.ReadChan = readChan
-	c.WriteChan = writeChan
-	c.Closed = make(chan struct{})
-	return c, nil
+	if (isServer && remoteAddr == nil) || c == nil {
+		return nil, conn.ErrInvalidArgs
+	}
+
+	s := new(udpMessageIO)
+	s.c = c
+	s.isServer = isServer
+	s.remoteAddr = remoteAddr
+	s.ReadChan = make(chan []byte, 1024)
+	s.closed = make(chan struct{})
+	return s, nil
 }
 
 
-func (this *udpMessageIO) Read() (buf []byte, err error) {
-	buf = <-this.ReadChan
+func (this *udpMessageIO) Read() ([]byte, error) {
+	if this.isServer {
+		buf := <-this.ReadChan
+		return buf, nil
+	} else {
+		buf := make([]byte, 0xffff)
+		n, _, err := this.c.ReadFromUDP(buf)
+		if err != nil {
+			return nil, err
+		} else {
+			return buf[:n], nil
+		}
+	}
+}
+
+func (this *udpMessageIO) Write(b []byte) (err error) {
+
+	n := len(b)
+	var wn int
+
+	for {
+		if !this.isServer {
+			wn, err = this.c.Write(b)
+		} else {
+			wn, err = this.c.WriteToUDP(b, this.remoteAddr)
+		}
+
+		if err != nil {
+			return
+		}
+
+		n -= wn
+		if n > 0 {
+			b = b[n:]
+		} else {
+			break
+		}
+	}
+
 	return
-
-}
-
-func (this *udpMessageIO) Write(b []byte) error {
-	this.WriteChan <- b
-	return len(b), nil
 }
 
 func (this *udpMessageIO) Close() error {
-	close(this.Closed)
+	close(this.closed)
+	close(this.ReadChan)
+	if !this.isServer {
+		return this.c.Close()
+	}
+	return nil
 }
 
 func (this *udpMessageIO) LocalAddr() net.Addr {
-	return this.localAddr
+	return this.c.LocalAddr()
 
 }
 func (this *udpMessageIO) RemoteAddr() net.Addr {
-	return this.remoteAddr
+	if this.isServer {
+		return this.remoteAddr
+	} else {
+		return this.RemoteAddr()
+	}
 }

@@ -57,11 +57,15 @@ func (this *UdpMessageContext) Layer() conn.Layer {
 func (this *UdpMessageContext) Dial() (conn.MessageIO, error) {
 	srcAddr := &net.UDPAddr{IP: []byte{0, 0, 0, 0}, Port: 0}
 	//要验证一次read()不管读多少个字节都消掉一个UDP packet
-	return net.DialUDP("udp", srcAddr, this.udpAddr)
+	c, err := net.DialUDP("udp", srcAddr, this.udpAddr)
+	if err != nil {
+		return nil, err
+	}
+
+	return NewUdpMessageConn(c, false, nil)
 
 }
 
-func (this *UdpMessageContext) Listener() (conn.MessageListener, error) {
+func (this *UdpMessageContext) Listen() (conn.MessageListener, error) {
 	return NewUdpMessageListener(this.udpAddr, nil)
 }
-

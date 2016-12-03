@@ -17,7 +17,9 @@
 
 package conn
 
-import "net"
+import (
+	"net"
+)
 
 func WrapStream(contexts []StreamContext, origin StreamIO) (final StreamIO) {
 
