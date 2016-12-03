@@ -20,7 +20,6 @@ package noiseik
 import (
 	"github.com/FTwOoO/vpncore/conn"
 	"github.com/flynn/noise"
-	"fmt"
 )
 
 type NoiseIKMessageContext struct {
@@ -28,8 +27,8 @@ type NoiseIKMessageContext struct {
 	IsInitiator   bool
 	Pattern       noise.HandshakePattern
 
-	CS0           *noise.CipherState
-	CS1           *noise.CipherState
+	CSEnc         *noise.CipherState
+	CSDec         *noise.CipherState
 	handshakeStep int
 }
 
@@ -98,14 +97,10 @@ func (this *NoiseIKMessageContext) StepOne() {
 	}
 }
 
-func (this *NoiseIKMessageContext) HandshakeDone(cs0 *noise.CipherState, cs1 *noise.CipherState) {
-	if this.IsInitiator {
-		this.CS0 = cs0
-		this.CS1 = cs1
-	} else {
-		this.CS0 = cs1
-		this.CS1 = cs0
-	}
+func (this *NoiseIKMessageContext) HandshakeDone(csenc *noise.CipherState, csdec *noise.CipherState) {
+	this.CSEnc = csenc
+	this.CSDec = csdec
+
 }
 
 func (this *NoiseIKMessageContext) Encode(b []byte) (packet []byte, err error) {
@@ -120,9 +115,7 @@ func (this *NoiseIKMessageContext) Encode(b []byte) (packet []byte, err error) {
 			// final msg for noise handshake pattern we can extract the
 			// cipher
 			if this.IsFinalStep() {
-				fmt.Printf("Handshake completed, im Initiator? %v\n", this.IsInitiator)
-				fmt.Printf("[S] CS0: %v, CS1: %v\n", cs0, cs1)
-				this.HandshakeDone(cs0, cs1)
+				this.HandshakeDone(cs1, cs0)
 			}
 
 		} else {
@@ -130,8 +123,7 @@ func (this *NoiseIKMessageContext) Encode(b []byte) (packet []byte, err error) {
 		}
 
 	} else {
-		packet = this.CS0.Encrypt(nil, nil, b)
-		fmt.Printf("Encode %v to %v\n", b, packet)
+		packet = this.CSEnc.Encrypt(nil, nil, b)
 	}
 
 	return
@@ -152,28 +144,20 @@ func (this *NoiseIKMessageContext) Decode(b []byte) (packet []byte, err error) {
 			// final msg for noise handshake pattern we can extract the
 			// cipher
 			if this.IsFinalStep() {
-				fmt.Printf("Handshake completed, im Initiator? %v\n", this.IsInitiator)
-				fmt.Printf("[C] CS0: %v, CS1: %v\n", cs0, cs1)
-
 				this.HandshakeDone(cs0, cs1)
 			}
 
 			return
 
 		} else {
-			fmt.Printf("current step %d, \n", this.handshakeStep)
 			return nil, conn.ErrInValidHandshakeStep
 		}
 
 	} else {
-		fmt.Printf("Try to Decode %v\n", b)
-
-		packet, err = this.CS0.Decrypt(nil, nil, b)
+		packet, err = this.CSDec.Decrypt(nil, nil, b)
 		if err != nil {
 			return
 		}
-
-		fmt.Printf("Decode %v to %v\n", b, packet)
 
 	}
 	return
