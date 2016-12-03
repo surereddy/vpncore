@@ -19,7 +19,7 @@ package noiseik
 
 import (
 	"github.com/FTwOoO/vpncore/conn"
-	"github.com/flynn/noise"
+	"github.com/FTwOoO/noise"
 )
 
 type NoiseIKMessageContext struct {
@@ -123,7 +123,7 @@ func (this *NoiseIKMessageContext) Encode(b []byte) (packet []byte, err error) {
 		}
 
 	} else {
-		packet = this.CSEnc.Encrypt(nil, nil, b)
+		packet = this.CSEnc.EncryptWithAd(nil, nil, b)
 	}
 
 	return
@@ -154,7 +154,7 @@ func (this *NoiseIKMessageContext) Decode(b []byte) (packet []byte, err error) {
 		}
 
 	} else {
-		packet, err = this.CSDec.Decrypt(nil, nil, b)
+		packet, err = this.CSDec.DecryptWithAd(nil, nil, b)
 		if err != nil {
 			return
 		}
