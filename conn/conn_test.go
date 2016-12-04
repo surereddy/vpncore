@@ -34,7 +34,6 @@ import (
 	"github.com/FTwOoO/vpncore/conn/message/protobuf"
 	"github.com/FTwOoO/noise"
 	"github.com/FTwOoO/vpncore/conn/message/noiseik"
-	//"github.com/FTwOoO/vpncore/conn/message/udp"
 	"github.com/FTwOoO/vpncore/conn/message/udp"
 )
 
