@@ -21,6 +21,7 @@ import (
 	"net"
 	"time"
 	"github.com/FTwOoO/vpncore/conn"
+	"sync"
 )
 
 type udpMessageIO struct {
@@ -28,9 +29,12 @@ type udpMessageIO struct {
 	isServer   bool
 
 	remoteAddr *net.UDPAddr
+
 	ReadChan   chan []byte
 	LastSeen   time.Time
-	closed     chan struct{}
+	closeChan  chan struct{}
+	closeOnce  sync.Once
+
 }
 
 func NewUdpMessageConn(c *net.UDPConn, isServer bool, remoteAddr *net.UDPAddr) (*udpMessageIO, error) {
@@ -44,10 +48,9 @@ func NewUdpMessageConn(c *net.UDPConn, isServer bool, remoteAddr *net.UDPAddr) (
 	s.isServer = isServer
 	s.remoteAddr = remoteAddr
 	s.ReadChan = make(chan []byte, 1024)
-	s.closed = make(chan struct{})
+	s.closeChan = make(chan struct{})
 	return s, nil
 }
-
 
 func (this *udpMessageIO) Read() ([]byte, error) {
 	if this.isServer {
@@ -91,13 +94,18 @@ func (this *udpMessageIO) Write(b []byte) (err error) {
 	return
 }
 
-func (this *udpMessageIO) Close() error {
-	close(this.closed)
-	close(this.ReadChan)
-	if !this.isServer {
-		return this.c.Close()
-	}
-	return nil
+func (this *udpMessageIO) Close() (err error) {
+	this.closeOnce.Do(func() {
+
+		close(this.closeChan)
+		close(this.ReadChan)
+		if !this.isServer {
+			err = this.c.Close()
+		}
+	})
+
+	return
+
 }
 
 func (this *udpMessageIO) LocalAddr() net.Addr {

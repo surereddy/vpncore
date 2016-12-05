@@ -26,7 +26,9 @@ import (
 
 type UdpMessageListener struct {
 	c               *net.UDPConn
-	closed          chan struct{}
+
+	closeOnce       sync.Once
+	closeChan       chan struct{}
 	connections     map[string]*udpMessageIO
 	connectionsLock sync.Mutex
 	newConnections  chan *udpMessageIO
@@ -41,7 +43,7 @@ func NewUdpMessageListener(udpAddr *net.UDPAddr, buf []byte) (l *UdpMessageListe
 	}
 
 	l = &UdpMessageListener{c:c,
-		closed:make(chan struct{}),
+		closeChan:make(chan struct{}),
 		connections:map[string]*udpMessageIO{},
 		connectionsLock:sync.Mutex{},
 		newConnections: make(chan *udpMessageIO, ConnectionsChanSize),
@@ -83,8 +85,12 @@ func (this *UdpMessageListener) expire() {
 func (this *UdpMessageListener) listenLoop() {
 
 	for {
-		if this.closed == nil {
+		select {
+
+		case <-this.closeChan:
 			return
+
+		default:
 		}
 
 		n, addr, err := this.c.ReadFromUDP(this.buf[:])
@@ -123,26 +129,29 @@ func (this *UdpMessageListener) listenLoop() {
 func (this *UdpMessageListener) Accept() (conn.MessageIO, error) {
 
 	select {
-	case <-this.closed:
+	case <-this.closeChan:
 		return nil, conn.ErrIOClosed
 	case c := <-this.newConnections:
 		return c, nil
 	}
 }
 
-func (this *UdpMessageListener) Close() error {
-	this.connectionsLock.Lock()
-	defer this.connectionsLock.Unlock()
+func (this *UdpMessageListener) Close() (err error) {
+	this.closeOnce.Do(func() {
+		this.connectionsLock.Lock()
+		defer this.connectionsLock.Unlock()
 
-	for _, cc := range this.connections {
-		cc.Close()
-		continue
+		for _, cc := range this.connections {
+			cc.Close()
+			continue
 
-	}
-	this.connections = nil
-	close(this.closed)
-	this.closed = nil
-	return this.c.Close()
+		}
+		this.connections = map[string]*udpMessageIO{}
+		close(this.closeChan)
+		err= this.c.Close()
+	})
+
+	return
 }
 
 func (this *UdpMessageListener)  Addr() net.Addr {
