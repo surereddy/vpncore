@@ -35,7 +35,7 @@ func (this *CryptStreamContext) Layer() conn.Layer {
 //must called after init object
 func (this *CryptStreamContext) Valid() (bool, error) {
 	if this.EncrytionConfig == nil {
-		return false, errors.New("Need to set encrytion config!")
+		return false, errors.New("Need to set up encrytion config")
 	}
 
 	return true, nil

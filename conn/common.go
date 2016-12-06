@@ -83,6 +83,11 @@ type Client interface {
 	Dial(contexts []Context) (ObjectIO, error)
 }
 
+//A server or client own context instances. if a context object have states,
+//the states is shared by all io connections, for example, NoiseIKMessageContext
+//has the handshake state that changes when processing messages, no matter which
+// connection the messages arride.
+//
 type Context interface {
 	Valid() (bool, error)
 	Layer() Layer
@@ -172,29 +177,3 @@ func (f DialerFunc) Dial() (net.Conn, error) {
 	return f()
 }
 
-
-/*
-
-type Handler interface {
-	HandleSession(*Session)
-}
-
-type HandlerFunc func(*Session)
-
-func (f HandlerFunc) HandleSession(session *Session) {
-	f(session)
-}
-
-func CreateCodec(dialer Dialer, protocol MessageContext) (MessagegReadWriteCloser, error) {
-	conn, err := dialer.Dial()
-	if err != nil {
-		return nil, err
-	}
-
-	codec, err := protocol.NewCodec(conn)
-	if err != nil {
-		return nil, err
-	}
-	return codec, nil
-}
-*/
