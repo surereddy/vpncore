@@ -20,7 +20,7 @@ package transport
 import (
 	"net"
 	"errors"
-	"github.com/FTwOoO/vpncore/conn"
+	"github.com/FTwOoO/vpncore/net/conn"
 )
 
 type TransportStreamContext struct {

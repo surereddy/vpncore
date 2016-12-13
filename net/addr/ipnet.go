@@ -22,7 +22,7 @@ import (
 	"strings"
 	"fmt"
 	"sort"
-	"github.com/FTwOoO/vpncore/common"
+	"github.com/FTwOoO/vpncore/misc"
 )
 
 type AddressType uint
@@ -50,7 +50,7 @@ func NewIPRangeByRange(start uint32, end uint32) *IPRange {
 	/*
 	ones := net.IPv4len * 8 - int(math.Floor(math.Log2(float64(count)) + 0.5))
 	mask := net.CIDRMask(ones, net.IPv4len * 8)
-	ip := common.IP4FromUint32(start)
+	ip := misc.IP4FromUint32(start)
 	subnet := net.IPNet{IP: ip.Mask(mask), Mask: mask}
 	fmt.Printf("start %x, ip %s subnet %s mask %d\n", start, ip, subnet, mask)*/
 
@@ -60,7 +60,7 @@ func NewIPRangeByRange(start uint32, end uint32) *IPRange {
 
 func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
 	if ip4 := ip.To4(); ip4 != nil {
-		start := common.IP4ToUInt32(ip4)
+		start := misc.IP4ToUInt32(ip4)
 		end := start + count - 1
 		return NewIPRangeByRange(start, end)
 	}
@@ -70,8 +70,8 @@ func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
 func NewIPRangeByIPNet(subnet *net.IPNet) *IPRange {
 	if ip4 := subnet.IP.To4(); ip4 != nil {
 		maskedIp := subnet.IP.Mask(subnet.Mask)
-		start := common.IP4ToUInt32(maskedIp)
-		end := start + ^common.IP4ToUInt32(net.IP(subnet.Mask))
+		start := misc.IP4ToUInt32(maskedIp)
+		end := start + ^misc.IP4ToUInt32(net.IP(subnet.Mask))
 
 		if end < start {
 			return nil
@@ -89,7 +89,7 @@ func (a *IPRange) UpdateInfo(info string) *IPRange {
 func (a *IPRange) Contains(ip net.IP) bool {
 	if ip4 := ip.To4(); ip4 != nil {
 		if a.version == IPv4 {
-			ipval := common.IP4ToUInt32(ip4)
+			ipval := misc.IP4ToUInt32(ip4)
 			return a.End >= ipval && a.Start <= ipval
 		}
 	}
@@ -144,7 +144,7 @@ func (a IPRanges) Get(ip net.IP) *IPRange {
 
 func (a IPRanges) search(ip net.IP) int {
 	if ip4 := ip.To4(); ip4 != nil {
-		ipval := common.IP4ToUInt32(ip4)
+		ipval := misc.IP4ToUInt32(ip4)
 		n := len(a)
 
 		i, j := 0, n

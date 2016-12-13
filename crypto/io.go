@@ -18,7 +18,6 @@
 package crypto
 
 import (
-	"github.com/FTwOoO/vpncore/common"
 	"io"
 )
 
@@ -27,17 +26,19 @@ type CryptionReadWriter struct {
 	base   io.ReadWriter
 }
 
-func NewCryptionReadWriter(base io.ReadWriter, stream CommonCipher) *CryptionReadWriter {
+func NewCryptionReadWriter(base io.ReadWriter, stream CommonCipher) (*CryptionReadWriter, error) {
+	if base == nil || stream == nil {
+		return nil, ErrArgs
+	}
+
 	return &CryptionReadWriter{
 		stream: stream,
 		base: base,
-	}
+	}, nil
 }
 
 func (this *CryptionReadWriter) Read(data []byte) (int, error) {
-	if this.base == nil {
-		return 0, common.ErrObjectNotFound
-	}
+
 	nBytes, err := this.base.Read(data)
 	if nBytes > 0 {
 		this.stream.Decrypt(data[:nBytes], data[:nBytes])
@@ -46,9 +47,6 @@ func (this *CryptionReadWriter) Read(data []byte) (int, error) {
 }
 
 func (this *CryptionReadWriter) Write(data []byte) (int, error) {
-	if this.base == nil {
-		return 0, common.ErrObjectNotFound
-	}
 
 	//TODO: use recycle buffer for buf
 	//why just copy data to data? because data is client's valid data,

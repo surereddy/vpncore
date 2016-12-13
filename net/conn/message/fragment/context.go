@@ -15,16 +15,20 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package common
+package fragment
 
-import (
-	"errors"
-)
+import "github.com/FTwOoO/vpncore/net/conn"
 
+type FragmentContext struct {}
 
-var (
-	ErrObjectReleased   = errors.New("Object already released.")
-	ErrBadConfiguration = errors.New("Bad configuration.")
-	ErrObjectNotFound   = errors.New("Object not found.")
-	ErrDuplicatedName   = errors.New("Duplicated name.")
-)
+func (this *FragmentContext) Valid() (bool, error) {
+	return true, nil
+}
+
+func (this *FragmentContext) Layer() conn.Layer {
+	return conn.FRAGMENT_LAYER
+}
+
+func (this *FragmentContext) Pipe(base conn.StreamIO) conn.MessageIO {
+	return &FragmentIO{base:base}
+}

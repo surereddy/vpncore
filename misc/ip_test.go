@@ -15,23 +15,29 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package transport
+package misc
 
 import (
+	"testing"
 	"net"
-	"github.com/FTwOoO/vpncore/conn"
 )
 
-type transportListener struct {
-	net.Listener
-	proto    conn.TransportProtocol
-}
+func TestIP4FromAndFromUint32(t *testing.T) {
 
-func (l *transportListener) Accept() (conn.StreamIO, error) {
-	c, err := l.Listener.Accept()
-	if err != nil {
-		return nil, err
-	} else {
-		return &transportIO{Conn:c, proto:l.proto}, nil
+	ips := [] string{
+		"1.2.3.4",
+		"254.123.0.3",
+		"127.0.0.1",
 	}
+
+	for _, ip := range ips {
+		v := IP4ToUInt32(net.ParseIP(ip))
+		ip2 := IP4FromUint32(v).String()
+
+		if ip != ip2 {
+			t.Failed()
+		}
+
+	}
+
 }

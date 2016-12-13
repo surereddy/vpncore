@@ -7,6 +7,9 @@ import (
 	"github.com/FTwOoO/vpncore/crypto/cipher"
 )
 
+var (
+	ErrArgs = errors.New("Arguments are not valid.")
+)
 
 //TODO: More elegant style to import these types from sub modules to
 // local namespace?

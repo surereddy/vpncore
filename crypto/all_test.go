@@ -48,11 +48,6 @@ func EnryptionOne(t *testing.T, encrytion Cipher, testKey string, testDataLen in
 }
 
 func EnryptionStreamingIO(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
-	cf, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
-		if err != nil {
-		t.Fatal(err)
-	}
-
 	// create test data
 	len1 := mrand.Intn(testDataLen) + testDataLen
 	len2 := mrand.Intn(testDataLen) + testDataLen
@@ -73,22 +68,39 @@ func EnryptionStreamingIO(t *testing.T, encrytion Cipher, testKey string, testDa
 	result1 := make([]byte, len(alldata))
 	result2 := make([]byte, len(alldata))
 
-	buf1 := bytes.NewBuffer([]byte{}) // A Buffer needs no initialization.
-	r1 := NewCryptionReadWriter(buf1, cf)
+	buf1 := bytes.NewBuffer([]byte{})
+	cf1, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r1, err := NewCryptionReadWriter(buf1, cf1)
+	if err != nil {
+		t.Fatal(err)
+	}
 	r1.Write(data1)
 	r1.Write(data2)
 	r1.Write(data3)
-	//n, err := r1.Read(result1)
 	buf1.Read(result1)
 
-	buf2 := bytes.NewBuffer([]byte{}) // A Buffer needs no initialization.
-	r2 := NewCryptionReadWriter(buf2, cf)
+	buf2 := bytes.NewBuffer([]byte{})
+	cf2, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r2, err := NewCryptionReadWriter(buf2, cf2)
+	if err != nil {
+		t.Fatal(err)
+	}
 	r2.Write(alldata)
-	//n, err := r1.Read(result1)
 	buf2.Read(result2)
 
-	if !bytes.Equal(result1, result2) || bytes.Equal(result1, alldata){
+	if !bytes.Equal(result1, result2) {
 		t.Fatal("Error encryption 1!")
+	}
+
+	if encrytion != NONE && bytes.Equal(result1, alldata) {
+		t.Fatal("Error encryption 2!")
+
 	}
 
 	r1.Write(alldata)
@@ -99,8 +111,8 @@ func EnryptionStreamingIO(t *testing.T, encrytion Cipher, testKey string, testDa
 	r1.Read(result1)
 	r1.Read(result2)
 
-	if !bytes.Equal(result1, result2) || !bytes.Equal(result1, alldata) {
-		t.Fatal("Error encryption 2!")
+	if !bytes.Equal(result1, result2) {
+		t.Fatal("Error encryption 3!")
 	}
 
 }

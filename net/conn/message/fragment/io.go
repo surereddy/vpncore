@@ -18,7 +18,7 @@
 package fragment
 
 import (
-	"github.com/FTwOoO/vpncore/conn"
+	"github.com/FTwOoO/vpncore/net/conn"
 	"io"
 	"encoding/binary"
 )

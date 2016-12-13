@@ -15,29 +15,43 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package common
+package crypt
 
 import (
-	"testing"
-	"net"
+	"github.com/FTwOoO/vpncore/crypto"
+	"github.com/FTwOoO/vpncore/net/conn"
+	"errors"
 )
 
-func TestIP4FromAndFromUint32(t *testing.T) {
+type CryptStreamContext struct {
+	*crypto.EncrytionConfig
+}
 
-	ips := [] string{
-		"1.2.3.4",
-		"254.123.0.3",
-		"127.0.0.1",
+func (this *CryptStreamContext) Layer() conn.Layer {
+	return conn.CRYPTO_LAYER
+}
+
+
+//must called after init object
+func (this *CryptStreamContext) Valid() (bool, error) {
+	if this.EncrytionConfig == nil {
+		return false, errors.New("Need to set up encrytion config")
 	}
 
-	for _, ip := range ips {
-		v := IP4ToUInt32(net.ParseIP(ip))
-		ip2 := IP4FromUint32(v).String()
+	return true, nil
+}
 
-		if ip != ip2 {
-			t.Failed()
-		}
-
+func (this *CryptStreamContext) Pipe(base conn.StreamIO) (c conn.StreamIO) {
+	cipher, err := crypto.NewCipher(this.EncrytionConfig)
+	if err != nil {
+		return nil
 	}
+
+	c, err = crypto.NewCryptionReadWriter(base, cipher)
+	if err != nil {
+		return nil
+	}
+
+	return
 
 }

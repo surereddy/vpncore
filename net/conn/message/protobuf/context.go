@@ -2,7 +2,7 @@ package protobuf
 
 import (
 	"reflect"
-	"github.com/FTwOoO/vpncore/conn"
+	"github.com/FTwOoO/vpncore/net/conn"
 	"fmt"
 	"github.com/golang/protobuf/proto"
 )

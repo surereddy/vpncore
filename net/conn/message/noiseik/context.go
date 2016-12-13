@@ -18,7 +18,7 @@
 package noiseik
 
 import (
-	"github.com/FTwOoO/vpncore/conn"
+	"github.com/FTwOoO/vpncore/net/conn"
 	"github.com/FTwOoO/noise"
 )
 

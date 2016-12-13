@@ -27,14 +27,14 @@ import (
 	"time"
 	mt "github.com/FTwOoO/vpncore/testing"
 	"github.com/FTwOoO/vpncore/crypto"
-	"github.com/FTwOoO/vpncore/conn/stream/crypt"
-	"github.com/FTwOoO/vpncore/conn/stream/transport"
-	"github.com/FTwOoO/vpncore/conn"
-	"github.com/FTwOoO/vpncore/conn/message/fragment"
-	"github.com/FTwOoO/vpncore/conn/message/protobuf"
+	"github.com/FTwOoO/vpncore/net/conn/stream/crypt"
+	"github.com/FTwOoO/vpncore/net/conn/stream/transport"
+	"github.com/FTwOoO/vpncore/net/conn"
+	"github.com/FTwOoO/vpncore/net/conn/message/fragment"
+	"github.com/FTwOoO/vpncore/net/conn/message/protobuf"
 	"github.com/FTwOoO/noise"
-	"github.com/FTwOoO/vpncore/conn/message/noiseik"
-	"github.com/FTwOoO/vpncore/conn/message/udp"
+	"github.com/FTwOoO/vpncore/net/conn/message/noiseik"
+	"github.com/FTwOoO/vpncore/net/conn/message/udp"
 )
 
 func TestStreamIO(t *testing.T) {

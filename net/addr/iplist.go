@@ -22,7 +22,7 @@ import (
 	"strings"
 	"fmt"
 	"net"
-	"github.com/FTwOoO/vpncore/common"
+	"github.com/FTwOoO/vpncore/misc"
 
 )
 
@@ -35,7 +35,7 @@ func (a IPList) Swap(i, j int) {
 	a[i], a[j] = a[j], a[i]
 }
 func (a IPList) Less(i, j int) bool {
-	return common.IP4ToUInt32(a[i]) < common.IP4ToUInt32(a[j])
+	return misc.IP4ToUInt32(a[i]) < misc.IP4ToUInt32(a[j])
 }
 
 func (a IPList) Sort() {
@@ -46,7 +46,7 @@ func (self IPList) Contains(ip net.IP) bool {
 	// TODO: support IPv6
 
 	i := sort.Search(len(self), func(i int) bool {
-		return common.IP4ToUInt32(self[i]) >= common.IP4ToUInt32(ip)
+		return misc.IP4ToUInt32(self[i]) >= misc.IP4ToUInt32(ip)
 	})
 	return i < len(self) && self[i].Equal(ip)
 }

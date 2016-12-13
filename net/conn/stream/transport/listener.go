@@ -15,37 +15,23 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package crypt
+package transport
 
 import (
-	"github.com/FTwOoO/vpncore/crypto"
-	"github.com/FTwOoO/vpncore/conn"
-	"errors"
+	"net"
+	"github.com/FTwOoO/vpncore/net/conn"
 )
 
-type CryptStreamContext struct {
-	*crypto.EncrytionConfig
+type transportListener struct {
+	net.Listener
+	proto    conn.TransportProtocol
 }
 
-func (this *CryptStreamContext) Layer() conn.Layer {
-	return conn.CRYPTO_LAYER
-}
-
-
-//must called after init object
-func (this *CryptStreamContext) Valid() (bool, error) {
-	if this.EncrytionConfig == nil {
-		return false, errors.New("Need to set up encrytion config")
-	}
-
-	return true, nil
-}
-
-func (this *CryptStreamContext) Pipe(base conn.StreamIO) conn.StreamIO {
-	cipher, err := crypto.NewCipher(this.EncrytionConfig)
+func (l *transportListener) Accept() (conn.StreamIO, error) {
+	c, err := l.Listener.Accept()
 	if err != nil {
-		return nil
+		return nil, err
+	} else {
+		return &transportIO{Conn:c, proto:l.proto}, nil
 	}
-
-	return crypto.NewCryptionReadWriter(base, cipher)
 }

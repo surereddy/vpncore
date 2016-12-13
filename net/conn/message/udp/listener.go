@@ -19,7 +19,7 @@ package udp
 
 import (
 	"net"
-	"github.com/FTwOoO/vpncore/conn"
+	"github.com/FTwOoO/vpncore/net/conn"
 	"time"
 	"sync"
 )
