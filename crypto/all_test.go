@@ -104,12 +104,12 @@ func EnryptionStreamingIO(t *testing.T, encrytion Cipher, testKey string, testDa
 	}
 
 	r1.Write(alldata)
+	r1.Read(result1)
+
 	r2.Write(data1)
 	r2.Write(data2)
 	r2.Write(data3)
-
-	r1.Read(result1)
-	r1.Read(result2)
+	r2.Read(result2)
 
 	if !bytes.Equal(result1, result2) {
 		t.Fatal("Error encryption 3!")
