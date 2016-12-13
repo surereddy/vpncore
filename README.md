@@ -4,6 +4,14 @@ waiting...
 # DESC
 This project is originally a fold of [water](https://github.com/songgao/water), that is a tun/tap util implemented with Go. I extend it for supporting Mac OS X, and DNS/routing feature. Now I recreate a project for better portability, implements basic toolset for VPN Server/Client, including but not limited to tun/tap, DNS, routing management, transport.
 
+# Related projects
+
+* kone: VPN though SOCKS/HTTP proxy.
+* govpn: Features strong encryption like chaff/window.
+* goproxy: Multiplexing streams on a connection, and maintain connection with the session pool.
+* gohop: Simple VPN project.
+* badvpn
+
 
 # PROJECT
 * *vpncore/tuntap* is a native Go library for [TUN/TAP](http://en.wikipedia.org/wiki/TUN/TAP) interfaces.
@@ -54,6 +62,5 @@ Mac 10.10 or later OS version deny from loading unsigned kext, so:
     sudo kextunload -b  net.tunnelblick.tap
     ```
 3. Use [utun](https://github.com/songgao/water/issues/3) to implements Tun without loading third-party tun/tap kext. Reference to implementation of [vpn-ws/tun.c](https://github.com/unbit/vpn-ws/blob/master/src/tuntap.c). 
-
 
 
