@@ -19,6 +19,8 @@ package tuntap
 import (
 	"io"
 	"net"
+	"syscall"
+	"os"
 )
 
 const (
@@ -50,9 +52,22 @@ func NewTUN(ifName string) (ifce *Interface, err error) {
 	return newTUN(ifName)
 }
 
+func (ifce *Interface) SetNonblock() (err error) {
+	if err = syscall.SetNonblock(int(ifce.ReadWriteCloser.(*os.File).Fd()), true); err != nil {
+		ifce.ReadWriteCloser.Close()
+	}
+
+	return
+}
+
 // Returns true if ifce is a TUN interface, otherwise returns false;
 func (ifce *Interface) IsTUN() bool {
 	return !ifce.isTAP
+}
+
+func (ifce *Interface) Fd() int {
+	x:= ifce.ReadWriteCloser.(*os.File).Fd()
+	return (int)(x)
 }
 
 // Returns true if ifce is a TAP interface, otherwise returns false;

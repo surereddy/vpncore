@@ -50,12 +50,12 @@ type sockaddr_ctl struct {
 };
 
 type UTunFile struct {
-	file *os.File
+	*os.File
 }
 
 func (utunF *UTunFile) Read(p []byte) (n int, err error) {
 	buffer := make([]byte, 2000)
-	num, err := utunF.file.Read(buffer)
+	num, err := utunF.File.Read(buffer)
 	if err != nil {
 		return
 	}
@@ -65,7 +65,7 @@ func (utunF *UTunFile) Read(p []byte) (n int, err error) {
 }
 
 func (utunF *UTunFile) Close() error {
-	return utunF.file.Close()
+	return utunF.File.Close()
 }
 
 func (utunF *UTunFile) Write(p []byte) (n int, err error) {
@@ -84,10 +84,11 @@ func (utunF *UTunFile) Write(p []byte) (n int, err error) {
 
 	copy(t[4:], p)
 
-	n, err = utunF.file.Write(t)
+	n, err = utunF.File.Write(t)
 
 	return
 }
+
 
 func newTAP(ifName string) (ifce *Interface, err error) {
 	if !checkTapName(ifName) {
@@ -97,6 +98,7 @@ func newTAP(ifName string) (ifce *Interface, err error) {
 	if err != nil {
 		return nil, err
 	}
+
 
 	ifce = &Interface{isTAP: true,
 		ReadWriteCloser: file,
@@ -117,9 +119,10 @@ func newTUN(ifName string) (ifce *Interface, err error) {
 
 	ifce = &Interface{
 		isTAP: false,
-		ReadWriteCloser: &UTunFile{file:os.NewFile(fd, createdIfName)},
+		ReadWriteCloser: &UTunFile{File:os.NewFile(fd, createdIfName)},
 		name: createdIfName,
 	}
+
 	return
 }
 
@@ -147,7 +150,6 @@ func openUTUN(ifName string) (createdTunName string, fd uintptr, err error) {
 
 	_, _, errno = unix.Syscall(unix.SYS_IOCTL, fd, CTLIOCGINFO, uintptr(unsafe.Pointer(&info)))
 	if errno != 0 {
-
 		err = errno
 		return
 	}
@@ -160,13 +162,14 @@ func openUTUN(ifName string) (createdTunName string, fd uintptr, err error) {
 	addr.sc_len = (byte)(unsafe.Sizeof(addr) & 0xFF)
 
 	_, _, errno = unix.Syscall(unix.SYS_CONNECT, fd, uintptr(unsafe.Pointer(&addr)), unsafe.Sizeof(addr))
-	if errno != 0 {
+	if errno != 0  {
 		err = errno
 		return
 	}
 
 	var utunname [20]byte
 	var utunname_len = unsafe.Sizeof(utunname)
+
 
 	_, _, errno = unix.Syscall6(unix.SYS_GETSOCKOPT, fd, SYSPROTO_CONTROL, UTUN_OPT_IFNAME, uintptr(unsafe.Pointer(&utunname)), uintptr(unsafe.Pointer(&utunname_len)), 0)
 	if errno != 0 {

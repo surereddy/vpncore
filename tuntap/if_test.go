@@ -96,6 +96,9 @@ func testInterface(ifce *Interface, ip net.IP, subnet net.IPNet) {
 		startPing(ip4BroadcastAddr(ifce.Net()))
 	}
 
+
+	defer ifce.Close()
+
 	timeout := time.NewTimer(5 * time.Second).C
 
 	readFrame:
@@ -138,16 +141,15 @@ func testInterface(ifce *Interface, ip net.IP, subnet net.IPNet) {
 	}
 
 	fmt.Printf("Close the iterface %s\n", ifce.Name())
-	ifce.Close()
 	wg.Wait()
 
 }
 
 func TestAll(t *testing.T) {
-	subnet := net.IPNet{IP:[]byte{192, 168, 99, 0}, Mask:net.IPv4Mask(255, 255, 255, 0)}
-	ip := net.IP{192, 168, 99, 1}
+	subnet := net.IPNet{IP:[]byte{192, 168, 77, 0}, Mask:net.IPv4Mask(255, 255, 255, 0)}
+	ip := net.IP{192, 168, 77, 1}
 
-	ifce, err := NewTUN("tun2")
+	ifce, err := NewTUN("tun3")
 	if err != nil {
 		t.Fatal(err)
 	}

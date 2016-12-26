@@ -26,9 +26,6 @@ import (
 )
 
 const (
-	cIFF_TUN = 0x0001
-	cIFF_TAP = 0x0002
-	cIFF_NO_PI = 0x1000
 	IFNAMSIZ = 16
 
 )
@@ -48,7 +45,8 @@ func newTAP(ifName string) (ifce *Interface, err error) {
 	if err != nil {
 		return nil, err
 	}
-	name, err := createInterface(file.Fd(), ifName, cIFF_TAP | cIFF_NO_PI)
+
+	name, err := createInterface(file.Fd(), ifName, syscall.IFF_TAP | syscall.IFF_NO_PI)
 	if err != nil {
 		return nil, err
 	}
@@ -71,7 +69,7 @@ func newTUN(ifName string) (ifce *Interface, err error) {
 		return nil, err
 	}
 
-	name, err := createInterface(file.Fd(), ifName, cIFF_TUN | cIFF_NO_PI)
+	name, err := createInterface(file.Fd(), ifName, syscall.IFF_TUN | syscall.IFF_NO_PI)
 	if err != nil {
 		fmt.Println("err %v", err)
 
@@ -95,5 +93,6 @@ func createInterface(fd uintptr, ifName string, flags uint16) (createdIFName str
 		return
 	}
 	createdIFName = strings.Trim(string(req.Name[:]), "\x00")
+
 	return
 }
