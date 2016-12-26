@@ -30,31 +30,69 @@ import (
 
 const BUFFERSIZE = 1522
 
-func startRead(wg *sync.WaitGroup, ch chan <- []byte, ifce *Interface) {
+func startRead(wg *sync.WaitGroup, ifce *Interface) bool {
 	wg.Add(1)
-	defer wg.Done()
+	defer func () {
+		fmt.Printf("startRead() end!")
+		wg.Done()
+	}()
 
+	Reading:
 	for {
 		buffer := make([]byte, BUFFERSIZE)
 		n, err := ifce.Read(buffer)
 		if err == nil {
 			fmt.Printf("Received a packet(%d bytes from %s)\n", n, ifce.Name())
-			buffer = buffer[:n:n]
-			ch <- buffer
+			buffer = buffer[:n]
+
+			var ipPacket tcpip.IPv4Packet
+
+			if ifce.IsTAP() {
+				ethertype := tcpip.MACPacket(buffer).MACEthertype()
+				if ethertype != tcpip.IPv4 {
+					fmt.Printf("Packet is not ipv4\n")
+					continue Reading
+				}
+				if !tcpip.IsBroadcast(tcpip.MACPacket(buffer).MACDestination()) {
+					fmt.Printf("Packet is Broadcast\n")
+					continue Reading
+				}
+
+				ipPacket = tcpip.IPv4Packet(tcpip.MACPacket(buffer).MACPayload())
+			} else {
+				ipPacket = tcpip.IPv4Packet(buffer)
+			}
+
+			if !tcpip.IsIPv4(ipPacket) {
+				fmt.Printf("Packet is not ipv4\n")
+				continue Reading
+			}
+
+			if !ipPacket.SourceIP().Equal(ifce.IP()) {
+				fmt.Printf("Packet source[%s] dont match [%s]\n", ipPacket.SourceIP().String(), ifce.IP().String())
+				continue Reading
+			}
+			if ipPacket.Protocol() != tcpip.ICMP {
+				fmt.Printf("Packet is not ICMP\n")
+				continue Reading
+			}
+			fmt.Printf("Received ICMP frame: %#v\n", hex.EncodeToString(ipPacket))
+			return true
+
+
 		} else {
 			fmt.Println(err)
-			return
+			return false
 		}
 	}
 }
 
 func startPing(dst net.IP) {
-	c := time.After(1 * time.Second)
+	c := time.NewTicker(1 * time.Second)
 	select {
-	case <-c:
+	case <-c.C:
 		c := fmt.Sprintf("ping -c 5 %s", dst.String())
 		cmd.RunCommand(c)
-		return
 	}
 }
 
@@ -69,6 +107,9 @@ func ip4BroadcastAddr(subnet net.IPNet) (brdIp net.IP) {
 }
 
 func testInterface(ifce *Interface, ip net.IP, subnet net.IPNet) {
+
+	defer ifce.Close()
+
 
 	err := ifce.SetupNetwork(ip, nil, subnet, 1400)
 	if err != nil {
@@ -86,62 +127,22 @@ func testInterface(ifce *Interface, ip net.IP, subnet net.IPNet) {
 		panic(err)
 	}
 
-	dataCh := make(chan []byte, 8)
-	wg := &sync.WaitGroup{}
-	go startRead(wg, dataCh, ifce)
-
-	if ifce.IsTUN() {
-		startPing(ifce.PeerIP())
-	} else {
-		startPing(ip4BroadcastAddr(ifce.Net()))
-	}
-
-
-	defer ifce.Close()
-
-	timeout := time.NewTimer(5 * time.Second).C
-
-	readFrame:
-	for {
-		select {
-		case buffer := <-dataCh:
-			var ipPacket tcpip.IPv4Packet
-
-			if ifce.IsTAP() {
-				ethertype := tcpip.MACPacket(buffer).MACEthertype()
-				if ethertype != tcpip.IPv4 {
-					continue readFrame
-				}
-				if !tcpip.IsBroadcast(tcpip.MACPacket(buffer).MACDestination()) {
-					continue readFrame
-				}
-
-				ipPacket = tcpip.IPv4Packet(tcpip.MACPacket(buffer).MACPayload())
-			} else {
-				ipPacket = tcpip.IPv4Packet(buffer)
-			}
-
-			if !tcpip.IsIPv4(ipPacket) {
-				continue readFrame
-			}
-
-			if !ipPacket.SourceIP().Equal(ifce.IP()) {
-				continue readFrame
-			}
-			if ipPacket.Protocol() != tcpip.ICMP {
-				continue readFrame
-			}
-			fmt.Printf("Received ICMP frame: %#v\n", hex.EncodeToString(ipPacket))
-			break readFrame
-
-		case <-timeout:
-			panic("Waiting for broadcast packet timeout")
-
+	go func() {
+		if ifce.IsTUN() {
+			startPing(ifce.PeerIP())
+		} else {
+			startPing(ip4BroadcastAddr(ifce.Net()))
 		}
+	}()
+
+	wg := &sync.WaitGroup{}
+	succed := startRead(wg, ifce)
+	if succed == false {
+		panic("Fail to read ICMP packets")
 	}
 
-	fmt.Printf("Close the iterface %s\n", ifce.Name())
 	wg.Wait()
+	fmt.Printf("Close the iterface %s\n", ifce.Name())
 
 }
 
