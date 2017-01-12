@@ -50,16 +50,18 @@ func BenchmarkMaxMindDBCountry(b *testing.B) {
 	fmt.Printf("Time used: %s\n", time.Since(start))
 }
 
-
 func TestGeoIpQuery(t *testing.T) {
-
-	country := GeoIpQuery("43.237.144.99")
-	if  country != "CN" {
-		t.Fail()
+	ips := []string{
+		"1.0.0.99",
+		"43.237.144.99",
+		"1.2.32.99",
+		"1.2.17.1",
 	}
 
-	country = GeoIpQuery("1.2.17.1")
-	if country != "CN" {
-		t.Fail()
+	for _, ip := range ips {
+		country := GeoIpQuery(ip)
+		if country != "CN" {
+			t.Fatalf("IP %v is not in CN\n", ip)
+		}
 	}
 }

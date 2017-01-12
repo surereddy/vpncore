@@ -34,7 +34,7 @@ const (
 )
 
 type IPRange struct {
-	version AddressType
+	Version AddressType
 	Start   uint32
 	End     uint32
 	Group   string
@@ -47,15 +47,7 @@ func NewIPRangeByRange(start uint32, end uint32) *IPRange {
 		return nil
 	}
 
-	/*
-	ones := net.IPv4len * 8 - int(math.Floor(math.Log2(float64(count)) + 0.5))
-	mask := net.CIDRMask(ones, net.IPv4len * 8)
-	ip := misc.IP4FromUint32(start)
-	subnet := net.IPNet{IP: ip.Mask(mask), Mask: mask}
-	fmt.Printf("start %x, ip %s subnet %s mask %d\n", start, ip, subnet, mask)*/
-
-
-	return &IPRange{Start:start, End:end, version:IPv4}
+	return &IPRange{Start:start, End:end, Version:IPv4}
 }
 
 func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
@@ -76,7 +68,7 @@ func NewIPRangeByIPNet(subnet *net.IPNet) *IPRange {
 		if end < start {
 			return nil
 		}
-		return &IPRange{Start:start, End:end, version:IPv4}
+		return &IPRange{Start:start, End:end, Version:IPv4}
 	}
 	return nil
 }
@@ -88,7 +80,7 @@ func (a *IPRange) UpdateInfo(info string) *IPRange {
 
 func (a *IPRange) Contains(ip net.IP) bool {
 	if ip4 := ip.To4(); ip4 != nil {
-		if a.version == IPv4 {
+		if a.Version == IPv4 {
 			ipval := misc.IP4ToUInt32(ip4)
 			return a.End >= ipval && a.Start <= ipval
 		}
@@ -135,7 +127,7 @@ func (a IPRanges) Get(ip net.IP) *IPRange {
 	n := len(a)
 	i := a.search(ip)
 
-	if i < n {
+	if i >0 && i < n {
 		return a[i]
 	}
 	return nil
@@ -149,7 +141,7 @@ func (a IPRanges) search(ip net.IP) int {
 
 		i, j := 0, n
 		for i < j {
-			h := i + (j - i) / 2 // avoid overflow when computing h
+			h := i + (j - i) / 2
 			r := a[h]
 
 			if ipval > r.End {
