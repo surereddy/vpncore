@@ -112,7 +112,7 @@ func newTUN(ifName string) (ifce *Interface, err error) {
 		return nil, fmt.Errorf("Error name:%s", ifName)
 	}
 
-	createdIfName, fd, err := openUTUN(ifName)
+	createdIfName, fd, err := createUTUN(ifName)
 	if err != nil {
 		return nil, err
 	}
@@ -126,7 +126,7 @@ func newTUN(ifName string) (ifce *Interface, err error) {
 	return
 }
 
-func openUTUN(ifName string) (createdTunName string, fd uintptr, err error) {
+func createUTUN(ifName string) (createdTunName string, fd uintptr, err error) {
 	//
 	// https://github.com/OpenVPN/openvpn/blob/master/src/openvpn/tun.c:open_darwin_utun
 	//

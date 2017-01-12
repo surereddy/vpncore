@@ -66,8 +66,17 @@ func (ifce *Interface) IsTUN() bool {
 }
 
 func (ifce *Interface) Fd() int {
-	x:= ifce.ReadWriteCloser.(*os.File).Fd()
-	return (int)(x)
+	if f, ok:= ifce.ReadWriteCloser.(*os.File); ok {
+		return 	(int)(f.Fd())
+
+	} else {
+		if f, ok:= ifce.ReadWriteCloser.(*UTunFile); ok {
+			return 	(int)(f.Fd())
+		}
+
+	}
+
+	return -1
 }
 
 // Returns true if ifce is a TAP interface, otherwise returns false;
