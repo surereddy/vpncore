@@ -52,7 +52,7 @@ func BenchmarkMaxMindDBCountry(b *testing.B) {
 
 func TestGeoIpQuery(t *testing.T) {
 	ips := []string{
-		"1.0.0.99",
+		"1.0.1.99",
 		"43.237.144.99",
 		"1.2.32.99",
 		"1.2.17.1",

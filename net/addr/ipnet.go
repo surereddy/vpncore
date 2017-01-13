@@ -127,7 +127,7 @@ func (a IPRanges) Get(ip net.IP) *IPRange {
 	n := len(a)
 	i := a.search(ip)
 
-	if i >0 && i < n {
+	if i >= 0 && i < n {
 		return a[i]
 	}
 	return nil
@@ -143,7 +143,6 @@ func (a IPRanges) search(ip net.IP) int {
 		for i < j {
 			h := i + (j - i) / 2
 			r := a[h]
-
 			if ipval > r.End {
 				i = h + 1
 			} else if ipval < r.Start {
