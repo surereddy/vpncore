@@ -41,11 +41,14 @@ func BenchmarkNewBlackIP(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		ip := ips[i]
 		f := iprule.FindIP(ip)
+		if f == false {
+			b.Fatal()
+		}
 		fmt.Printf("Find ip %s: %v\n", ip, f)
 
 		ip = mtesting.RandomIPv4Address(r)
 		f = iprule.FindIP(ip)
-		fmt.Printf("Find ip %s: %v\n", ip, f)
+		fmt.Printf("Find random ip %s: %v\n", ip, f)
 	}
 
 }

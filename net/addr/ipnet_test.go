@@ -46,6 +46,19 @@ func TestIPRanges_Contains(t *testing.T) {
 		}
 	}
 
+	ipExcluded := []net.IP{
+		net.IP{33, 32, 32, 5},
+		net.IP{17, 4, 2, 2},
+		net.IP{22, 33, 44, 1},
+	}
+
+	for _, ip := range ipExcluded {
+		if netl.Contains(ip) != false {
+			t.Fatalf("Ip %s(%d) is in %v", ip.String(), misc.IP4ToUInt32(ip), netl)
+		}
+	}
+
+
 }
 
 

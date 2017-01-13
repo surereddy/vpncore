@@ -115,7 +115,7 @@ func (a IPRanges) Contains(ip net.IP) bool {
 	n := len(a)
 	i := a.search(ip)
 
-	if i < n {
+	if i >= 0 && i < n {
 		return true
 	}
 
