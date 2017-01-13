@@ -48,7 +48,7 @@ func (self IPList) Contains(ip net.IP) bool {
 	i := sort.Search(len(self), func(i int) bool {
 		return misc.IP4ToUInt32(self[i]) >= misc.IP4ToUInt32(ip)
 	})
-	return i < len(self) && self[i].Equal(ip)
+	return i < len(self) && i >= 0 && self[i].Equal(ip)
 }
 
 func (self *IPList) UnmarshalTOML(data []byte) (err error) {
