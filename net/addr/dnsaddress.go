@@ -9,7 +9,7 @@ import (
 
 type DNSAddresss struct {
 	Ip   net.IP
-	Port int
+	Port uint16
 }
 
 func (self *DNSAddresss) UnmarshalTOML(data []byte) (err error) {
@@ -23,10 +23,12 @@ func (self *DNSAddresss) UnmarshalTOML(data []byte) (err error) {
 		}
 		ip, port := arr[0], arr[1]
 		self.Ip = net.ParseIP(ip)
-		self.Port, err = strconv.Atoi(port)
+		uport, err := strconv.Atoi(port)
 		if err != nil {
 			return err
 		}
+
+		self.Port = uint16(uport)
 	} else {
 		self.Ip = net.ParseIP(s)
 		if self.Ip == nil {
