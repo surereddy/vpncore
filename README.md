@@ -1,8 +1,5 @@
-waiting...
 
-
-# DESC
-This project is originally a fold of [water](https://github.com/songgao/water), that is a tun/tap util implemented with Go. I extend it for supporting Mac OS X, and DNS/routing feature. Now I recreate a project for better portability, implements basic toolset for VPN Server/Client, including but not limited to tun/tap, DNS, routing management, transport.
+Utils for creating VPN Server/Client, including tun/tap, encryption, connection dialer, not stable yet..
 
 # Related projects
 
@@ -62,5 +59,4 @@ Mac 10.10 or later OS version deny from loading unsigned kext, so:
     sudo kextunload -b  net.tunnelblick.tap
     ```
 3. Use [utun](https://github.com/songgao/water/issues/3) to implements Tun without loading third-party tun/tap kext. Reference to implementation of [vpn-ws/tun.c](https://github.com/unbit/vpn-ws/blob/master/src/tuntap.c). 
-
 
