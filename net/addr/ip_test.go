@@ -15,32 +15,29 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package misc
+package addr
 
-import "net"
+import (
+	"testing"
+	"net"
+)
 
-import "encoding/binary"
+func TestIP4FromAndFromUint32(t *testing.T) {
 
-var v4InV6Prefix = []byte{0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0xff, 0xff}
-
-
-func IP4ToUInt32(ip net.IP) uint32 {
-	// net.ParseIP will return 16 bytes for IPv4,
-	// but we cant stop user creating 4 bytes for IPv4 bytes using net.IP{N,N,N,N}
-	//
-	if len(ip) == net.IPv4len {
-		return binary.BigEndian.Uint32(ip)
+	ips := [] string{
+		"1.2.3.4",
+		"254.123.0.3",
+		"127.0.0.1",
 	}
 
-	if len(ip) == net.IPv6len && BytesEqual(ip[:12], v4InV6Prefix) {
-		return binary.BigEndian.Uint32(ip[12:])
+	for _, ip := range ips {
+		v := IP4ToUInt32(net.ParseIP(ip))
+		ip2 := IP4FromUint32(v).String()
+
+		if ip != ip2 {
+			t.Failed()
+		}
+
 	}
 
-	return 0
-}
-
-func IP4FromUint32(v uint32) net.IP {
-	ip := make([]byte, net.IPv4len)
-	binary.BigEndian.PutUint32(ip, v)
-	return ip
 }

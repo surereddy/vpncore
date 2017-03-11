@@ -23,9 +23,9 @@ import (
 	"fmt"
 	"encoding/hex"
 	"sync"
-	"github.com/FTwOoO/vpncore/net/tcpip"
-	"github.com/FTwOoO/vpncore/cmd"
-	"github.com/FTwOoO/vpncore/cmd/routes"
+	"github.com/FTwOoO/vpncore/tuntap/tcpip"
+	"github.com/FTwOoO/vpncore/tuntap/cmd"
+	"github.com/FTwOoO/vpncore/tuntap/cmd/routes"
 )
 
 const BUFFERSIZE = 1522

@@ -22,7 +22,6 @@ import (
 	"strings"
 	"fmt"
 	"sort"
-	"github.com/FTwOoO/vpncore/misc"
 )
 
 type AddressType uint
@@ -52,7 +51,7 @@ func NewIPRangeByRange(start uint32, end uint32) *IPRange {
 
 func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
 	if ip4 := ip.To4(); ip4 != nil {
-		start := misc.IP4ToUInt32(ip4)
+		start := IP4ToUInt32(ip4)
 		end := start + count - 1
 		return NewIPRangeByRange(start, end)
 	}
@@ -62,8 +61,8 @@ func NewIPRangeByStartIp(ip net.IP, count uint32) *IPRange {
 func NewIPRangeByIPNet(subnet *net.IPNet) *IPRange {
 	if ip4 := subnet.IP.To4(); ip4 != nil {
 		maskedIp := subnet.IP.Mask(subnet.Mask)
-		start := misc.IP4ToUInt32(maskedIp)
-		end := start + ^misc.IP4ToUInt32(net.IP(subnet.Mask))
+		start := IP4ToUInt32(maskedIp)
+		end := start + ^IP4ToUInt32(net.IP(subnet.Mask))
 
 		if end < start {
 			return nil
@@ -81,7 +80,7 @@ func (a *IPRange) UpdateInfo(info string) *IPRange {
 func (a *IPRange) Contains(ip net.IP) bool {
 	if ip4 := ip.To4(); ip4 != nil {
 		if a.Version == IPv4 {
-			ipval := misc.IP4ToUInt32(ip4)
+			ipval := IP4ToUInt32(ip4)
 			return a.End >= ipval && a.Start <= ipval
 		}
 	}
@@ -136,7 +135,7 @@ func (a IPRanges) Get(ip net.IP) *IPRange {
 
 func (a IPRanges) search(ip net.IP) int {
 	if ip4 := ip.To4(); ip4 != nil {
-		ipval := misc.IP4ToUInt32(ip4)
+		ipval := IP4ToUInt32(ip4)
 		n := len(a)
 
 		i, j := 0, n

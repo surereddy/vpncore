@@ -21,8 +21,8 @@ import (
 	"net"
 	"fmt"
 	"errors"
-	"github.com/FTwOoO/vpncore/cmd"
-	"github.com/FTwOoO/vpncore/cmd/routes"
+	"github.com/FTwOoO/vpncore/tuntap/cmd"
+	"github.com/FTwOoO/vpncore/tuntap/cmd/routes"
 )
 
 func setUpHWAddr(ifce *Interface) (err error) {

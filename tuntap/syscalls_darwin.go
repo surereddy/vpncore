@@ -24,7 +24,7 @@ import (
 	"fmt"
 	"encoding/binary"
 	"syscall"
-	"github.com/FTwOoO/vpncore/net/tcpip"
+	"github.com/FTwOoO/vpncore/tuntap/tcpip"
 )
 
 const (

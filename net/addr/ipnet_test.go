@@ -20,7 +20,6 @@ package addr
 import (
 	"testing"
 	"net"
-	"github.com/FTwOoO/vpncore/misc"
 )
 
 func TestIPRanges_Contains(t *testing.T) {
@@ -42,7 +41,7 @@ func TestIPRanges_Contains(t *testing.T) {
 
 	for _, ip := range ips {
 		if netl.Contains(ip) != true {
-			t.Fatalf("Ip %s(%d) is not in %v", ip.String(), misc.IP4ToUInt32(ip), netl)
+			t.Fatalf("Ip %s(%d) is not in %v", ip.String(), IP4ToUInt32(ip), netl)
 		}
 	}
 
@@ -54,7 +53,7 @@ func TestIPRanges_Contains(t *testing.T) {
 
 	for _, ip := range ipExcluded {
 		if netl.Contains(ip) != false {
-			t.Fatalf("Ip %s(%d) is in %v", ip.String(), misc.IP4ToUInt32(ip), netl)
+			t.Fatalf("Ip %s(%d) is in %v", ip.String(), IP4ToUInt32(ip), netl)
 		}
 	}
 
@@ -66,10 +65,10 @@ func TestNewIPRangeByRange(t *testing.T) {
 	ip1:= net.IP{32, 32, 31, 5}
 	ip2:= net.IP{32, 32, 31, 10}
 
-	start := misc.IP4ToUInt32(ip1)
-	end := misc.IP4ToUInt32(ip2)
+	start := IP4ToUInt32(ip1)
+	end := IP4ToUInt32(ip2)
 	mid := (start + end) / 2
-	ip3 := misc.IP4FromUint32(mid)
+	ip3 := IP4FromUint32(mid)
 
 	r := NewIPRangeByRange(start, end)
 	if (!r.Contains(ip1) || !r.Contains(ip2) || !r.Contains(ip3) ) {
