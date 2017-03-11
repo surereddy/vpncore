@@ -26,13 +26,12 @@ import (
 	"io"
 	"testing"
 	"fmt"
-	"github.com/FTwOoO/vpncore/crypto/cipher"
 )
 
-func EnryptionOne(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
+func EnryptionOne(t *testing.T, encrytion StreamCipherName, testKey string, testDataLen int) {
 	fmt.Printf("Test %s for EnryptionOne with key[%s] and test data length %d\n", encrytion, testKey, testDataLen)
 
-	bc, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
+	bc, err := NewStreamCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -47,7 +46,7 @@ func EnryptionOne(t *testing.T, encrytion Cipher, testKey string, testDataLen in
 	}
 }
 
-func EnryptionStreamingIO(t *testing.T, encrytion Cipher, testKey string, testDataLen int) {
+func EnryptionStreamingIO(t *testing.T, encrytion StreamCipherName, testKey string, testDataLen int) {
 	// create test data
 	len1 := mrand.Intn(testDataLen) + testDataLen
 	len2 := mrand.Intn(testDataLen) + testDataLen
@@ -69,7 +68,7 @@ func EnryptionStreamingIO(t *testing.T, encrytion Cipher, testKey string, testDa
 	result2 := make([]byte, len(alldata))
 
 	buf1 := bytes.NewBuffer([]byte{})
-	cf1, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
+	cf1, err := NewStreamCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -83,7 +82,7 @@ func EnryptionStreamingIO(t *testing.T, encrytion Cipher, testKey string, testDa
 	buf1.Read(result1)
 
 	buf2 := bytes.NewBuffer([]byte{})
-	cf2, err := NewCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
+	cf2, err := NewStreamCipher(&EncrytionConfig{Cipher:encrytion, Password:testKey})
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -121,38 +120,17 @@ func TestAll(t *testing.T) {
 	password := "I'm test key"
 
 	testDatalens := []int{0x10, 0x100, 0x1000, 0x10000, 0x10000}
-	testCiphers := []Cipher{AES128CFB, AES256CFB, SALSA20, NONE}
+	testCiphers := []StreamCipherName{AES128CFB, AES256CFB, NONE}
 
 	for _, testDatalen := range testDatalens {
 		for _, cf := range testCiphers {
 
 			EnryptionOne(t, cf, password, testDatalen)
 
-			if cf != SALSA20 {
-				EnryptionStreamingIO(t, cf, password, testDatalen)
-			}
+			EnryptionStreamingIO(t, cf, password, testDatalen)
+
 		}
 	}
 
 }
 
-func BenchmarkSalsa20(b *testing.B) {
-	var testDataLen = 2047
-
-	pass := make([]byte, 32)
-	io.ReadFull(crand.Reader, pass)
-	bc, err := cipher.NewSalsa20Stream(pass)
-	if err != nil {
-		b.Fatal(err)
-	}
-
-	data := make([]byte, testDataLen)
-	io.ReadFull(crand.Reader, data)
-	dec := make([]byte, testDataLen)
-	enc := make([]byte, testDataLen)
-
-	for i := 0; i < b.N; i++ {
-		bc.Encrypt(enc, data)
-		bc.Decrypt(dec, enc)
-	}
-}

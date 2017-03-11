@@ -17,18 +17,18 @@ type CommonCipher cipher.CommonCipher
 type StreamCipher cipher.StreamCipher
 type BlockCipher cipher.BlockCipher
 
-type Cipher string
+type StreamCipherName string
 
 const (
-	NONE = Cipher("None")
-	SALSA20 = Cipher("salsa20")
-	AES256CFB = Cipher("aes256cfb")
-	AES128CFB = Cipher("aes128cfb")
+	NONE = StreamCipherName("None")
+	AES256CFB = StreamCipherName("aes256cfb")
+	AES128CFB = StreamCipherName("aes128cfb")
+
 	SALT = "i'm salt"
 )
 
 type EncrytionConfig struct {
-	Cipher   Cipher
+	Cipher   StreamCipherName
 	Password string
 }
 
@@ -37,11 +37,8 @@ func GetKey(k string, kenLen int) []byte {
 	return pass
 }
 
-func NewCipher(config *EncrytionConfig) (CommonCipher, error) {
+func NewStreamCipher(config *EncrytionConfig) (CommonCipher, error) {
 	switch config.Cipher {
-	case SALSA20:
-		pass := GetKey(config.Password, 32)
-		return cipher.NewSalsa20Stream(pass)
 	case AES256CFB:
 		pass := GetKey(config.Password, 32)
 		return cipher.NewAESStream(pass)

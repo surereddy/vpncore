@@ -21,8 +21,8 @@ package cipher
 import (
 	"io"
 	"crypto/rand"
-	"github.com/FTwOoO/vpncore/crypto/common/cnw"
-	"github.com/FTwOoO/vpncore/crypto/common/aont"
+	"github.com/FTwOoO/vpncore/crypto/cipher/cnw"
+	"github.com/FTwOoO/vpncore/crypto/cipher/aont"
 )
 
 var (
