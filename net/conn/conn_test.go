@@ -40,8 +40,7 @@ import (
 func TestStreamIO(t *testing.T) {
 	p := conn.PROTO_TCP
 	password := "123456"
-	testCiphers := []crypto.Cipher{crypto.AES128CFB, crypto.AES256CFB, /*enc.SALSA20,*/
-		crypto.NONE}
+	testCiphers := []crypto.StreamCipherName{crypto.AES128CFB, crypto.AES256CFB, crypto.NONE}
 	testDatalens := []int{0x10, 0x100, 0x1000, 0x10000, 0x10000}
 
 	for _, cipher := range testCiphers {
@@ -251,7 +250,6 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 		defer wg.Done()
 
 		for i, msg := range msgs {
-
 
 			if i % 2 == 1 {
 				<-clientReadSignal

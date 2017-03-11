@@ -42,7 +42,7 @@ func (this *CryptStreamContext) Valid() (bool, error) {
 }
 
 func (this *CryptStreamContext) Pipe(base conn.StreamIO) (c conn.StreamIO) {
-	cipher, err := crypto.NewCipher(this.EncrytionConfig)
+	cipher, err := crypto.NewStreamCipher(this.EncrytionConfig)
 	if err != nil {
 		return nil
 	}

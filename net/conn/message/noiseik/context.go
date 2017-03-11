@@ -127,7 +127,6 @@ func (this *NoiseIKMessageContext) Encode(b []byte) (packet []byte, err error) {
 	}
 
 	return
-
 }
 
 func (this *NoiseIKMessageContext) Decode(b []byte) (packet []byte, err error) {

@@ -41,9 +41,9 @@ const (
 	OBS_LAYER = Layer(2)
 	CRYPTO_LAYER = Layer(3)
 	AUTH_LAYER = Layer(4)
-	APPCATIOIN_LAYER = Layer(5)
+	FRAGMENT_LAYER = Layer(5)
+	APPCATIOIN_LAYER = Layer(6)
 
-	FRAGMENT_LAYER = 7
 )
 
 type TransportProtocol string
