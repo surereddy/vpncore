@@ -40,7 +40,6 @@ const (
 	TRANSPORT_LAYER = Layer(1)
 	OBS_LAYER = Layer(2)
 	CRYPTO_LAYER = Layer(3)
-	AUTH_LAYER = Layer(4)
 	FRAGMENT_LAYER = Layer(5)
 	APPCATIOIN_LAYER = Layer(6)
 
@@ -104,15 +103,15 @@ type StreamContext interface {
 	Pipe(base StreamIO) StreamIO
 }
 
+type StreamToMessageContext interface {
+	Context
+	Pipe(base StreamIO) MessageIO
+}
+
 type MessageCreationContext interface {
 	Context
 	Dial() (MessageIO, error)
 	Listen() (MessageListener, error)
-}
-
-type StreamToMessageContext interface {
-	Context
-	Pipe(base StreamIO) MessageIO
 }
 
 type MessageContext interface {
@@ -126,6 +125,7 @@ type MessageToObjectContext interface {
 	Encode(interface{}) ([]byte, error)
 	Decode([]byte) (interface{}, error)
 }
+
 
 type  StreamListener interface {
 	Accept() (StreamIO, error)

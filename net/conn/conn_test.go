@@ -35,38 +35,32 @@ import (
 	"github.com/FTwOoO/noise"
 	"github.com/FTwOoO/vpncore/net/conn/message/noiseik"
 	"github.com/FTwOoO/vpncore/net/conn/message/udp"
+	"github.com/FTwOoO/vpncore/net/conn/message/ahead"
 )
 
-func TestStreamIO(t *testing.T) {
-	p := conn.PROTO_TCP
-	password := "123456"
-	testCiphers := []crypto.StreamCipherName{crypto.AES128CFB, crypto.AES256CFB, crypto.NONE}
-	testDatalens := []int{0x10, 0x100, 0x1000, 0x10000, 0x10000}
+func createTestPackets(n int) []*mt.TestPacket {
+	packets := []*mt.TestPacket{}
 
-	for _, cipher := range testCiphers {
-		for _, testDatalen := range testDatalens {
-			port := mrand.Intn(100) + 30000
-
-			fmt.Printf("Test PROTOCOL[%s] with ENCRYPTION[%s] PASS[%s]\n", p, cipher, password)
-
-			context1 := &transport.TransportStreamContext{
-				Protocol:p,
-				ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
-				RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
-			context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
-
-			listener, err := context1.Listen()
-			if err != nil {
-				t.Fatal(err)
-			}
-			listener = &conn.WrapStreamListener{Base:listener, Contexts:[]conn.StreamContext{context2}}
-
-			connection, err := context1.Dial()
-			connection = conn.WrapStream([]conn.StreamContext{context2}, connection)
-
-			testStreamIOReadWrite(t, listener, connection, testDatalen)
+	for {
+		if n < 1 {
+			break
 		}
+		mark := (n % 2 == 0)
+
+		msg := &mt.TestPacket{
+			Mark: mark,
+			Sid:  uint32(n),
+			Sessions: map[string]uint64{fmt.Sprintf("hello%d", n):uint64(n), "hi":uint64(n * 2)},
+
+		}
+
+		packets = append(packets, msg)
+		n -= 1
+
 	}
+
+	return packets
+
 }
 
 func testStreamIOReadWrite(t *testing.T, listener conn.StreamListener, connection conn.StreamIO, testDatalen int) {
@@ -136,64 +130,7 @@ func testStreamIOReadWrite(t *testing.T, listener conn.StreamListener, connectio
 
 }
 
-func TestStreamToObject(t *testing.T) {
-	p := conn.PROTO_TCP
-	port := mrand.Intn(100) + 30000
-	cipher := crypto.AES256CFB
-	password := "123456"
-
-	context1 := &transport.TransportStreamContext{
-		Protocol:p,
-		ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
-		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
-	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{
-		Cipher:cipher, Password:password,
-	},
-	}
-
-	context3 := new(fragment.FragmentContext)
-	context4, err := protobuf.NewProtobufMessageContext([]reflect.Type{reflect.TypeOf(&mt.TestPacket{})})
-	if err != nil {
-		t.Fatal(err)
-	}
-
-	contexts := []conn.Context{context1, context2, context3, context4}
-	server := new(conn.SimpleServer)
-	client := new(conn.SimpleClient)
-
-	listener, err := server.NewListener(contexts)
-	connection, err := client.Dial(contexts)
-
-	testMessageIOReadWrite(t, listener, connection, createTestPackets(2))
-
-}
-
-func createTestPackets(n int) []*mt.TestPacket {
-	packets := []*mt.TestPacket{}
-
-	for {
-		if n < 1 {
-			break
-		}
-		mark := (n % 2 == 0)
-
-		msg := &mt.TestPacket{
-			Mark: mark,
-			Sid:  uint32(n),
-			Sessions: map[string]uint64{fmt.Sprintf("hello%d", n):uint64(n), "hi":uint64(n * 2)},
-
-		}
-
-		packets = append(packets, msg)
-		n -= 1
-
-	}
-
-	return packets
-
-}
-
-func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connection conn.ObjectIO, msgs []*mt.TestPacket) {
+func testObjectIOReadWrite(t *testing.T, listener conn.ObjectListener, connection conn.ObjectIO, msgs []*mt.TestPacket) {
 	defer listener.Close()
 	defer connection.Close()
 
@@ -284,6 +221,70 @@ func testMessageIOReadWrite(t *testing.T, listener conn.ObjectListener, connecti
 
 }
 
+func TestStreamIO(t *testing.T) {
+	p := conn.PROTO_TCP
+	password := "123456"
+	testCiphers := []crypto.StreamCipherName{crypto.AES128CFB, crypto.AES256CFB, crypto.NONE}
+	testDatalens := []int{0x10, 0x100, 0x1000, 0x10000, 0x10000}
+
+	for _, cipher := range testCiphers {
+		for _, testDatalen := range testDatalens {
+			port := mrand.Intn(100) + 30000
+
+			fmt.Printf("Test PROTOCOL[%s] with ENCRYPTION[%s] PASS[%s]\n", p, cipher, password)
+
+			context1 := &transport.TransportStreamContext{
+				Protocol:p,
+				ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
+				RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
+			context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
+
+			listener, err := context1.Listen()
+			if err != nil {
+				t.Fatal(err)
+			}
+			listener = &conn.WrapStreamListener{Base:listener, Contexts:[]conn.StreamContext{context2}}
+
+			connection, err := context1.Dial()
+			connection = conn.WrapStream([]conn.StreamContext{context2}, connection)
+
+			testStreamIOReadWrite(t, listener, connection, testDatalen)
+		}
+	}
+}
+
+func TestStreamToObject(t *testing.T) {
+	p := conn.PROTO_TCP
+	port := mrand.Intn(100) + 30000
+	cipher := crypto.AES256CFB
+	password := "123456"
+
+	context1 := &transport.TransportStreamContext{
+		Protocol:p,
+		ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
+		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
+	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{
+		Cipher:cipher, Password:password,
+	},
+	}
+
+	context3 := new(fragment.FragmentContext)
+	context4, err := protobuf.NewProtobufMessageContext([]reflect.Type{reflect.TypeOf(&mt.TestPacket{})})
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	contexts := []conn.Context{context1, context2, context3, context4}
+	server := new(conn.SimpleServer)
+	client := new(conn.SimpleClient)
+
+	listener, err := server.NewListener(contexts)
+	connection, err := client.Dial(contexts)
+
+	testObjectIOReadWrite(t, listener, connection, createTestPackets(2))
+
+}
+
 func createNoiseIKContextPair() []*noiseik.NoiseIKMessageContext {
 	cs := noise.NewCipherSuite(noise.DH25519, noise.CipherAESGCM, noise.HashSHA256)
 	staticI := cs.GenerateKeypair(nil)
@@ -346,7 +347,7 @@ func TestStreamToObjectWithNoiseHandshake(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testMessageIOReadWrite(t, listener, connection, createTestPackets(4))
+	testObjectIOReadWrite(t, listener, connection, createTestPackets(4))
 }
 
 func TestMessageToObject(t *testing.T) {
@@ -373,6 +374,34 @@ func TestMessageToObject(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	testMessageIOReadWrite(t, listener, connection, createTestPackets(2))
+	testObjectIOReadWrite(t, listener, connection, createTestPackets(2))
+
+}
+
+func TestAheadMessage(t *testing.T) {
+
+	port := mrand.Intn(100) + 30000
+	context1, err := udp.NewUdpMessageContext(fmt.Sprintf("127.0.0.1:%d", port))
+	context2 := ahead.NewAheadContext("Key...")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	server := new(conn.SimpleServer)
+	client := new(conn.SimpleClient)
+
+	contexts := []conn.Context{context1, context2}
+
+	listener, err := server.NewListener(contexts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	connection, err := client.Dial(contexts)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testObjectIOReadWrite(t, listener, connection, createTestPackets(2))
 
 }

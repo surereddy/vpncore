@@ -72,7 +72,7 @@ func (this *NoiseIKMessageContext) Valid() (bool, error) {
 }
 
 func (this *NoiseIKMessageContext) Layer() conn.Layer {
-	return conn.AUTH_LAYER
+	return conn.CRYPTO_LAYER
 }
 
 func (this *NoiseIKMessageContext) IsHandshakeCompleted() bool {
