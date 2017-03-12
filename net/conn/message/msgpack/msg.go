@@ -4,7 +4,6 @@
  */
 
 
-
 package msgpack
 
 import (
@@ -24,7 +23,6 @@ func RegisterMessage(cmd MessageType, typ reflect.Type) {
 	messages[cmd] = typ
 	messagesLock.Unlock()
 }
-
 
 type MessageType uint8
 
@@ -107,6 +105,6 @@ func (z *wrapMessage) UnmarshalMsg(bts []byte) (o []byte, err error) {
 
 // Msgsize returns an upper bound estimate of the number of bytes occupied by the serialized message
 func (z wrapMessage) Msgsize() (s int) {
-	s = msgp.Uint8Size+z.ContentMsg.Msgsize()
+	s = msgp.Uint8Size + z.ContentMsg.Msgsize()
 	return
 }

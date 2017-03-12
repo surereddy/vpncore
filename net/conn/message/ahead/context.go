@@ -50,10 +50,11 @@ func (this *AheadContext) Layer() conn.Layer {
 func (this *AheadContext) Encode(b []byte) ([]byte, error) {
 	nonce := make([]byte, 12)
 	n := time.Now().Unix()
-	binary.BigEndian.PutUint64(nonce[4:], n)
+	binary.BigEndian.PutUint64(nonce[4:], uint64(n))
 	rand.Read(nonce[:4])
 
-	return this.cipher.Seal(nonce, nonce, nil, b), nil
+	en := this.cipher.Seal(nonce, nonce, b, nil)
+	return en, nil
 }
 
 func (this *AheadContext) Decode(b []byte) ([]byte, error) {
@@ -61,7 +62,9 @@ func (this *AheadContext) Decode(b []byte) ([]byte, error) {
 		return nil, errors.New("Bad message to decode by Ahead")
 	}
 
-	return this.cipher.Open(nil, b[:12], nil, b[12:])
+	nonce := b[:12]
+	bts, err := this.cipher.Open(nil, nonce, b[12:], nil)
+	return bts, err
 }
 
 

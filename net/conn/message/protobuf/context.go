@@ -30,15 +30,13 @@ func NewProtobufMessageContext(msgTypes []reflect.Type) (*ProtobufMessageContext
 }
 
 func (self *ProtobufMessageContext) Valid() (bool, error) {
-	res:= len(self.ValueToMsgType) > 0 && len(self.ValueToMsgType) == len(self.MsgTypeToValue)
+	res := len(self.ValueToMsgType) > 0 && len(self.ValueToMsgType) == len(self.MsgTypeToValue)
 	return res, nil
 }
-
 
 func (this *ProtobufMessageContext) Layer() conn.Layer {
 	return conn.APPCATIOIN_LAYER
 }
-
 
 func (this *ProtobufMessageContext) Encode(obj interface{}) ([]byte, error) {
 

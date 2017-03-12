@@ -9,13 +9,8 @@ import (
 	"github.com/FTwOoO/vpncore/net/conn"
 )
 
-type MsgpackContext struct {
-}
-
-func NewMsgpackContext(key []byte) *MsgpackContext {
-	ctx := new(MsgpackContext)
-	return ctx
-}
+//implements MessageToObjectContext
+type MsgpackContext struct{}
 
 func (this *MsgpackContext) Valid() (bool, error) {
 	return true, nil
@@ -25,10 +20,24 @@ func (this *MsgpackContext) Layer() conn.Layer {
 	return conn.CRYPTO_LAYER
 }
 
-func (this *MsgpackContext) Encode(b []byte) ([]byte, error) {
-	return nil, nil
+func (this *MsgpackContext) Encode(obj interface{}) ([]byte, error) {
+	if _, ok := obj.(Message); !ok {
+		return nil, conn.ErrUnsupportType
+	}
+
+	v := wrapMessage{ContentMsg:obj.(Message)}
+	return v.MarshalMsg(nil)
 }
 
-func (this *MsgpackContext) Decode(b []byte) ([]byte, error) {
-	return nil, nil
+func (this *MsgpackContext) Decode(bts []byte) (obj interface{}, err error) {
+
+	v := wrapMessage{}
+	_, err = v.UnmarshalMsg(bts)
+	if err != nil {
+		return
+	}
+	return v.ContentMsg, nil
 }
+
+
+
