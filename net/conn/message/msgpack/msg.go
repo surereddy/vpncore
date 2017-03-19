@@ -93,7 +93,6 @@ func (z *wrapMessage) UnmarshalMsg(bts []byte) (o []byte, err error) {
 	}
 
 	cmd := MessageType(zwht)
-	fmt.Printf("cmd:%d", cmd)
 
 	if typ, ok := messages[cmd]; ok {
 		z.ContentMsg = reflect.New(typ).Interface().(Message)

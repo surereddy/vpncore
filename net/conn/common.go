@@ -48,6 +48,7 @@ const (
 type TransportProtocol string
 
 const (
+	PROTO_UNKOWN = TransportProtocol("unkown")
 	PROTO_TCP = TransportProtocol("tcp")
 	PROTO_KCP = TransportProtocol("kcp")
 	PROTO_HTTP2 = TransportProtocol("http2")
