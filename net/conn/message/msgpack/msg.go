@@ -10,7 +10,6 @@ import (
 	"github.com/tinylib/msgp/msgp"
 	"reflect"
 	"errors"
-	"fmt"
 	"sync"
 )
 
