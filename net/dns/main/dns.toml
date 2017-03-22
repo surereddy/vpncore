@@ -1,0 +1,60 @@
+
+addr="0.0.0.0:15353"
+
+# Default action is send all queries to DEFAULT groups
+default-group = ["SYSTEM","CNNS", "FG"]
+
+[GeoIPValidate]
+enable=true
+groups=["CNNS", "SYSTEM"]
+geoip-country="CN"
+geoip-mmdb-file="GeoLite2-Country.mmdb"
+
+
+[Log]
+# log-file="dns.log"
+log-level="DEBUG"
+
+[Cache]
+enable =true
+max-count = 500
+
+[IPBlocker]
+ip=[
+   "64.111.96.204"
+   ]
+
+net=[
+    "32.32.32.0/24"
+    ]
+
+#
+# The "CN" group is special that will enable geoip filtering strategy
+# The "REJECT" group is special that will block the domain
+#
+[DNSGroup]
+CNNS=["192.168.1.1", "114.114.114.114", "223.6.6.6:53", "223.5.5.5"]
+FG=["8.8.8.8", "8.8.4.4"]
+
+[[DomainRule]]
+scheme="DOMAIN"
+group="CNNS"
+value=[
+    "order.mi.com",
+    "baidu.com",
+    ]
+
+
+[[DomainRule]]
+scheme="DOMAIN-SUFFIX"
+group="REJECT"
+value=["umeng.com"]
+
+
+[[Host]]
+name="example.com"
+ip=["93.184.216.34"]
+
+[[Host]]
+name="ip.com"
+ip=["64.111.96.203"]
