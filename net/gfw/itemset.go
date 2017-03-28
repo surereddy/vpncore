@@ -88,9 +88,7 @@ func (this *ItemSet) Load() bool {
 	scanner := bufio.NewScanner(inFile)
 	scanner.Split(bufio.ScanLines)
 	this.Lock()
-	defer func() {
-		this.Unlock()
-	}()
+	defer this.Unlock()
 
 	for scanner.Scan() {
 		this.itemMap[scanner.Text()] = true

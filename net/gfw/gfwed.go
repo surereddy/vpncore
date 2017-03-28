@@ -23,6 +23,10 @@ func downloadRemoteContent(remoteLink string) (io.ReadCloser, error) {
 
 
 func CreateGFWList(url string, file_path string) (gfwlist *ItemSet, err error) {
+	if url == "" {
+		url = gfwlistURL
+	}
+
 	gfwlist = NewItemSet(file_path, 4000)
 
 	var content io.ReadCloser
