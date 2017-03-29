@@ -16,10 +16,14 @@
  */
 
 package transport
+
 import (
 	"net"
 	"github.com/FTwOoO/vpncore/net/conn"
 )
+
+var _ conn.StreamIO = new(transportIO)
+
 type transportIO struct {
 	net.Conn
 	proto conn.TransportProtocol

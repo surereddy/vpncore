@@ -38,11 +38,11 @@ type Layer int
 
 const (
 	TRANSPORT_LAYER = Layer(1)
-	OBS_LAYER = Layer(2)
-	CRYPTO_LAYER = Layer(3)
+	COMPRESS_LAYER = Layer(2)
+	OBS_LAYER = Layer(3)
+	CRYPTO_LAYER = Layer(4)
 	FRAGMENT_LAYER = Layer(5)
 	APPCATIOIN_LAYER = Layer(6)
-
 )
 
 type TransportProtocol string
@@ -127,7 +127,6 @@ type MessageToObjectContext interface {
 	Decode([]byte) (interface{}, error)
 }
 
-
 type  StreamListener interface {
 	Accept() (StreamIO, error)
 	Close() error
@@ -149,7 +148,6 @@ type MessageIO interface {
 	Write([]byte) error
 	io.Closer
 }
-
 
 type  ObjectListener interface {
 	Accept() (ObjectIO, error)

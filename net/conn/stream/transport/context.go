@@ -23,6 +23,9 @@ import (
 	"github.com/FTwOoO/vpncore/net/conn"
 )
 
+var _ conn.StreamCreationContext = new(TransportStreamContext)
+
+
 type TransportStreamContext struct {
 	Protocol   conn.TransportProtocol
 	ListenAddr string

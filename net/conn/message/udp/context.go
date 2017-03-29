@@ -30,6 +30,8 @@ const (
 	MessageChanSizePerConn = 1024
 )
 
+var _ conn.MessageCreationContext = new(UdpMessageContext)
+
 type UdpMessageContext struct {
 	udpAddr *net.UDPAddr
 }

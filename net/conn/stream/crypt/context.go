@@ -23,6 +23,9 @@ import (
 	"errors"
 )
 
+var _ conn.StreamContext = new(CryptStreamContext)
+
+
 type CryptStreamContext struct {
 	*crypto.EncrytionConfig
 }

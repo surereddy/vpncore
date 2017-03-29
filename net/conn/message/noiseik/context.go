@@ -22,6 +22,9 @@ import (
 	"github.com/FTwOoO/noise"
 )
 
+var _ conn.MessageContext = new(NoiseIKMessageContext)
+
+
 type NoiseIKMessageContext struct {
 	Hs            *noise.HandshakeState
 	IsInitiator   bool

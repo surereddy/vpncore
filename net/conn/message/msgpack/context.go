@@ -9,6 +9,9 @@ import (
 	"github.com/FTwOoO/vpncore/net/conn"
 )
 
+var _ conn.MessageToObjectContext = new(MsgpackContext)
+
+
 //implements MessageToObjectContext
 type MsgpackContext struct{}
 

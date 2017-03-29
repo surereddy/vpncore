@@ -22,9 +22,11 @@ import (
 	"github.com/FTwOoO/vpncore/net/conn"
 )
 
+var _ conn.StreamListener = new(transportListener)
+
 type transportListener struct {
 	net.Listener
-	proto    conn.TransportProtocol
+	proto conn.TransportProtocol
 }
 
 func (l *transportListener) Accept() (conn.StreamIO, error) {

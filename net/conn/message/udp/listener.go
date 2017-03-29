@@ -24,6 +24,8 @@ import (
 	"sync"
 )
 
+var _ conn.MessageListener = new(UdpMessageListener)
+
 type UdpMessageListener struct {
 	c               *net.UDPConn
 
@@ -148,7 +150,7 @@ func (this *UdpMessageListener) Close() (err error) {
 		}
 		this.connections = map[string]*udpMessageIO{}
 		close(this.closeChan)
-		err= this.c.Close()
+		err = this.c.Close()
 	})
 
 	return

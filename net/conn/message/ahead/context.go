@@ -15,6 +15,9 @@ import (
 	"errors"
 )
 
+var _ conn.MessageContext = new(AheadContext)
+
+
 func cipherAESGCM(k [32]byte) cipher.AEAD {
 	c, err := aes.NewCipher(k[:])
 	if err != nil {

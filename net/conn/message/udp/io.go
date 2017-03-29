@@ -24,6 +24,8 @@ import (
 	"sync"
 )
 
+var _ conn.MessageIO = new(udpMessageIO)
+
 type udpMessageIO struct {
 	c          *net.UDPConn
 	isServer   bool

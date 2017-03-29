@@ -7,6 +7,8 @@ import (
 	"github.com/golang/protobuf/proto"
 )
 
+var _ conn.MessageToObjectContext = new(ProtobufMessageContext)
+
 type ProtobufMessageContext struct {
 	ValueToMsgType map[uint16]reflect.Type
 	MsgTypeToValue map[reflect.Type]uint16

@@ -23,6 +23,8 @@ import (
 	"encoding/binary"
 )
 
+var _ conn.MessageIO = new(FragmentIO)
+
 type FragmentIO struct {
 	base    conn.StreamIO
 

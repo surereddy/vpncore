@@ -19,7 +19,9 @@ package fragment
 
 import "github.com/FTwOoO/vpncore/net/conn"
 
-type FragmentContext struct {}
+var _ conn.StreamToMessageContext = new(FragmentContext)
+
+type FragmentContext struct{}
 
 func (this *FragmentContext) Valid() (bool, error) {
 	return true, nil

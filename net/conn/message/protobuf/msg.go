@@ -23,7 +23,10 @@ import (
 	"fmt"
 	"errors"
 	"encoding/binary"
+	"github.com/FTwOoO/vpncore/net/conn"
 )
+
+var _ conn.Marshaler = new(protobufMsg)
 
 type protobufMsgHeader struct {
 	MessageType uint16

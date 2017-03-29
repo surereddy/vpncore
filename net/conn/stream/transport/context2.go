@@ -23,11 +23,13 @@ import (
 	"github.com/FTwOoO/vpncore/net/conn"
 )
 
+var _ conn.StreamCreationContext = new(TransportStreamContext2)
+
 type TransportStreamContext2 struct {
 	Listener net.Listener
 }
 
-func (this *TransportStreamContext2) Dial() (conn.StreamIO, error){
+func (this *TransportStreamContext2) Dial() (conn.StreamIO, error) {
 	return nil, errors.New("ClientMode not supported!")
 }
 
