@@ -15,32 +15,46 @@
  * Author: FTwOoO <booobooob@gmail.com>
  */
 
-package transport
+package encryption
 
 import (
-	"net"
-	"errors"
+	"github.com/FTwOoO/vpncore/crypto"
 	"github.com/FTwOoO/vpncore/net/conn"
+	"errors"
 )
 
-var _ conn.StreamCreationContext = new(TransportStreamContext2)
+var _ conn.StreamContext = new(CryptStreamContext)
 
-type TransportStreamContext2 struct {
-	Listener net.Listener
+
+type CryptStreamContext struct {
+	*crypto.EncrytionConfig
 }
 
-func (this *TransportStreamContext2) Dial() (conn.StreamIO, error) {
-	return nil, errors.New("ClientMode not supported!")
+func (this *CryptStreamContext) Layer() conn.Layer {
+	return conn.ENCRYPTION_LAYER
 }
 
-func (this *TransportStreamContext2) Listen() (conn.StreamListener, error) {
-	return &transportListener{proto:conn.PROTO_UNKOWN, Listener:this.Listener}, nil
-}
 
-func (this *TransportStreamContext2) Layer() conn.Layer {
-	return conn.TRANSPORT_LAYER
-}
+//must called after init object
+func (this *CryptStreamContext) Valid() (bool, error) {
+	if this.EncrytionConfig == nil {
+		return false, errors.New("Need to set up encrytion config")
+	}
 
-func (this *TransportStreamContext2) Valid() (bool, error) {
 	return true, nil
+}
+
+func (this *CryptStreamContext) Pipe(base conn.StreamIO) (c conn.StreamIO) {
+	cipher, err := crypto.NewStreamCipher(this.EncrytionConfig)
+	if err != nil {
+		return nil
+	}
+
+	c, err = crypto.NewCryptionReadWriter(base, cipher)
+	if err != nil {
+		return nil
+	}
+
+	return
+
 }

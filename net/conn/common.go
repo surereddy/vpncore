@@ -40,7 +40,7 @@ const (
 	TRANSPORT_LAYER = Layer(1)
 	COMPRESS_LAYER = Layer(2)
 	OBS_LAYER = Layer(3)
-	CRYPTO_LAYER = Layer(4)
+	ENCRYPTION_LAYER = Layer(4)
 	FRAGMENT_LAYER = Layer(5)
 	APPCATIOIN_LAYER = Layer(6)
 )

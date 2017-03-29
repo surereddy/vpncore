@@ -3,23 +3,23 @@
  * Created: 2017-03
  */
 
-package ahead
+package encryption
 
 import (
 	"testing"
 	"bytes"
 )
 
-func TestAheadContext(t *testing.T) {
-	ctx:= NewAheadContext([]byte("Key..."))
+func TestGCM256Context(t *testing.T) {
+	ctx := NewGCM256Context([]byte("Key..."))
 
-	raw1 := []byte{1,2,3,4}
-	en, err := ctx.Encode([]byte{1,2,3,4})
+	raw1 := []byte{1, 2, 3, 4}
+	en, err := ctx.Encode([]byte{1, 2, 3, 4})
 	if err != nil {
 		t.Fatal("AheadContext encode error:", err)
 	}
 
-	raw2, err:= ctx.Decode(en)
+	raw2, err := ctx.Decode(en)
 	if err != nil {
 		t.Fatal("AheadContext decode error:", err)
 	}
@@ -27,9 +27,5 @@ func TestAheadContext(t *testing.T) {
 	if !bytes.Equal(raw1, raw2) {
 		t.Fatal("AheadContext encode/decode fail")
 	}
-
-
-
-
 
 }

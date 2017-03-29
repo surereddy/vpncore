@@ -3,7 +3,7 @@
  * Created: 2017-03
  */
 
-package ahead
+package encryption
 
 import (
 	"github.com/FTwOoO/vpncore/net/conn"
@@ -15,7 +15,7 @@ import (
 	"errors"
 )
 
-var _ conn.MessageContext = new(AheadContext)
+var _ conn.MessageContext = new(GCM256Context)
 
 
 func cipherAESGCM(k [32]byte) cipher.AEAD {
@@ -30,27 +30,27 @@ func cipherAESGCM(k [32]byte) cipher.AEAD {
 	return gcm
 }
 
-type AheadContext struct {
+type GCM256Context struct {
 	cipher cipher.AEAD
 	key    [32]byte
 }
 
-func NewAheadContext(key []byte) *AheadContext {
-	ctx := new(AheadContext)
+func NewGCM256Context(key []byte) *GCM256Context {
+	ctx := new(GCM256Context)
 	copy(ctx.key[:], key)
 	ctx.cipher = cipherAESGCM(ctx.key)
 	return ctx
 }
 
-func (this *AheadContext) Valid() (bool, error) {
+func (this *GCM256Context) Valid() (bool, error) {
 	return true, nil
 }
 
-func (this *AheadContext) Layer() conn.Layer {
-	return conn.CRYPTO_LAYER
+func (this *GCM256Context) Layer() conn.Layer {
+	return conn.ENCRYPTION_LAYER
 }
 
-func (this *AheadContext) Encode(b []byte) ([]byte, error) {
+func (this *GCM256Context) Encode(b []byte) ([]byte, error) {
 	nonce := make([]byte, 12)
 	n := time.Now().Unix()
 	binary.BigEndian.PutUint64(nonce[4:], uint64(n))
@@ -60,7 +60,7 @@ func (this *AheadContext) Encode(b []byte) ([]byte, error) {
 	return en, nil
 }
 
-func (this *AheadContext) Decode(b []byte) ([]byte, error) {
+func (this *GCM256Context) Decode(b []byte) ([]byte, error) {
 	if len(b) < 12 {
 		return nil, errors.New("Bad message to decode by Ahead")
 	}

@@ -27,16 +27,16 @@ import (
 	"time"
 	mt "github.com/FTwOoO/vpncore/testing"
 	"github.com/FTwOoO/vpncore/crypto"
-	"github.com/FTwOoO/vpncore/net/conn/stream/crypt"
-	"github.com/FTwOoO/vpncore/net/conn/stream/transport"
+	"github.com/FTwOoO/vpncore/net/conn/stream/encryption"
+	"github.com/FTwOoO/vpncore/net/conn/stream/transport/tcp"
 	"github.com/FTwOoO/vpncore/net/conn"
 	"github.com/FTwOoO/vpncore/net/conn/message/fragment"
-	"github.com/FTwOoO/vpncore/net/conn/message/protobuf"
+	"github.com/FTwOoO/vpncore/net/conn/message/object/protobuf"
 	"github.com/FTwOoO/noise"
-	"github.com/FTwOoO/vpncore/net/conn/message/noiseik"
-	"github.com/FTwOoO/vpncore/net/conn/message/udp"
-	"github.com/FTwOoO/vpncore/net/conn/message/ahead"
-	"github.com/FTwOoO/vpncore/net/conn/message/msgpack"
+	"github.com/FTwOoO/vpncore/net/conn/message/object/msgpack"
+	encryption2 "github.com/FTwOoO/vpncore/net/conn/message/encryption"
+
+	"github.com/FTwOoO/vpncore/net/conn/message/transport/udp"
 )
 
 func createProtobufTestPackets(n int) []interface{} {
@@ -270,11 +270,11 @@ func TestStreamIO(t *testing.T) {
 
 			fmt.Printf("Test PROTOCOL[%s] with ENCRYPTION[%s] PASS[%s]\n", p, cipher, password)
 
-			context1 := &transport.TransportStreamContext{
+			context1 := &transport.TCPTransportStreamContext{
 				Protocol:p,
 				ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
 				RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
-			context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
+			context2 := &encryption.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{Cipher:cipher, Password:password}}
 
 			listener, err := context1.Listen()
 			if err != nil {
@@ -296,11 +296,11 @@ func TestStreamToObject(t *testing.T) {
 	cipher := crypto.AES256CFB
 	password := "123456"
 
-	context1 := &transport.TransportStreamContext{
+	context1 := &transport.TCPTransportStreamContext{
 		Protocol:p,
 		ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
 		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
-	context2 := &crypt.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{
+	context2 := &encryption.CryptStreamContext{EncrytionConfig:&crypto.EncrytionConfig{
 		Cipher:cipher, Password:password,
 	},
 	}
@@ -322,12 +322,12 @@ func TestStreamToObject(t *testing.T) {
 
 }
 
-func createNoiseIKContextPair() []*noiseik.NoiseIKMessageContext {
+func createNoiseIKContextPair() []*encryption2.NoiseIKMessageContext {
 	cs := noise.NewCipherSuite(noise.DH25519, noise.CipherAESGCM, noise.HashSHA256)
 	staticI := cs.GenerateKeypair(nil)
 	staticR := cs.GenerateKeypair(nil)
 
-	context1, err := noiseik.NewNoiseIKMessageContext(
+	context1, err := encryption2.NewNoiseIKMessageContext(
 		cs,
 		[]byte("vpncore"),
 		staticI,
@@ -338,7 +338,7 @@ func createNoiseIKContextPair() []*noiseik.NoiseIKMessageContext {
 
 	}
 
-	context2, err := noiseik.NewNoiseIKMessageContext(
+	context2, err := encryption2.NewNoiseIKMessageContext(
 		cs,
 		[]byte("vpncore"),
 		noise.DHKey{},
@@ -346,14 +346,14 @@ func createNoiseIKContextPair() []*noiseik.NoiseIKMessageContext {
 		false,
 	)
 
-	return []*noiseik.NoiseIKMessageContext{context1, context2}
+	return []*encryption2.NoiseIKMessageContext{context1, context2}
 }
 
 func TestStreamToObjectWithNoiseHandshake(t *testing.T) {
 	p := conn.PROTO_TCP
 	port := mrand.Intn(100) + 30000
 
-	context1 := &transport.TransportStreamContext{
+	context1 := &transport.TCPTransportStreamContext{
 		Protocol:p,
 		ListenAddr:fmt.Sprintf("0.0.0.0:%d", port),
 		RemoveAddr:fmt.Sprintf("127.0.0.1:%d", port)}
@@ -422,7 +422,7 @@ func TestMessageToObjectWithAheadAndMsgpack(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	context2 := ahead.NewAheadContext([]byte("Key..."))
+	context2 := encryption2.NewGCM256Context([]byte("Key..."))
 	context3 := new(msgpack.MsgpackContext)
 
 	server := new(conn.SimpleServer)

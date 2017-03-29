@@ -20,7 +20,7 @@ func (this *MsgpackContext) Valid() (bool, error) {
 }
 
 func (this *MsgpackContext) Layer() conn.Layer {
-	return conn.CRYPTO_LAYER
+	return conn.ENCRYPTION_LAYER
 }
 
 func (this *MsgpackContext) Encode(obj interface{}) ([]byte, error) {

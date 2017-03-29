@@ -23,16 +23,16 @@ import (
 	"github.com/FTwOoO/vpncore/net/conn"
 )
 
-var _ conn.StreamCreationContext = new(TransportStreamContext)
+var _ conn.StreamCreationContext = new(TCPTransportStreamContext)
 
 
-type TransportStreamContext struct {
+type TCPTransportStreamContext struct {
 	Protocol   conn.TransportProtocol
 	ListenAddr string
 	RemoveAddr string
 }
 
-func (this *TransportStreamContext) Dial() (conn.StreamIO, error){
+func (this *TCPTransportStreamContext) Dial() (conn.StreamIO, error){
 
 	switch this.Protocol {
 	case conn.PROTO_TCP:
@@ -51,7 +51,7 @@ func (this *TransportStreamContext) Dial() (conn.StreamIO, error){
 	return nil, errors.New("Proto not supported!")
 }
 
-func (this *TransportStreamContext) Listen() (conn.StreamListener, error) {
+func (this *TCPTransportStreamContext) Listen() (conn.StreamListener, error) {
 	switch this.Protocol {
 	case conn.PROTO_KCP:
 		panic("not implemented yet!")
@@ -71,11 +71,11 @@ func (this *TransportStreamContext) Listen() (conn.StreamListener, error) {
 	}
 }
 
-func (this *TransportStreamContext) Layer() conn.Layer {
+func (this *TCPTransportStreamContext) Layer() conn.Layer {
 	return conn.TRANSPORT_LAYER
 }
 
-func (this *TransportStreamContext) Valid() (bool, error) {
+func (this *TCPTransportStreamContext) Valid() (bool, error) {
 	res := this.Protocol != "" && this.ListenAddr != "" && this.RemoveAddr != ""
 
 	return res, nil
