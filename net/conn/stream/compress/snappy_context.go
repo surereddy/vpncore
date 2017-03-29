@@ -1,7 +1,6 @@
 package compress
 
 import (
-	"github.com/FTwOoO/vpncore/crypto"
 	"github.com/FTwOoO/vpncore/net/conn"
 )
 
@@ -18,16 +17,5 @@ func (this *SnappyCompressionStreamContext) Valid() (bool, error) {
 }
 
 func (this *SnappyCompressionStreamContext) Pipe(base conn.StreamIO) (c conn.StreamIO) {
-	cipher, err := crypto.NewStreamCipher(this.EncrytionConfig)
-	if err != nil {
-		return nil
-	}
-
-	c, err = crypto.NewCryptionReadWriter(base, cipher)
-	if err != nil {
-		return nil
-	}
-
-	return
-
+	return NewSnappyReadWriter(base)
 }
